@@ -1,0 +1,878 @@
+---
+title: "O uso da distribuição Poisson composta na teoria de valores extremos para previsão de arrecadação de multas por excesso de velocidade."
+#subtitle: 
+author: 
+  - "Filipe Costa"
+date: '10/10/2022'
+encoding: "UTF-8"
+output:
+  xaringan::moon_reader:
+    #css: ['default', 'metropolis']
+    css: ["shinobi", 'xaringan-themer.css']
+    lib_dir: libs
+    chakra: libs/remark-latest.min.js
+    nature:
+      #slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+header-includes:
+  - \usepackage[brazilian]{babel}
+  - \usepackage{newunicodechar} 
+  - \usepackage{dcolumn}
+  
+---
+
+```{r include=FALSE,warning=FALSE, message=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+  fig.width = 10, fig.height = 5, fig.retina = 3,
+  out.width = "100%",
+  fig.align = 'center',
+  cache = TRUE,
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  hiline = TRUE
+)
+
+library(tidyverse)
+set.seed(04)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+#configure the slides
+style_duo_accent(
+  primary_color = "#030200",
+  secondary_color = "#000000",
+  inverse_header_color = "#e34210",
+  title_slide_background_color = "#fdfdfd",
+  title_slide_text_color = "#000000",
+  title_slide_background_image = "https://www.infoescola.com/wp-content/uploads/2016/05/ufpi.png",
+  title_slide_background_size = "50",
+  title_slide_background_position =   "89% 100%",
+  header_font_google = google_font("Lato"))
+```
+
+
+```{r}
+data = "radar.csv" |>
+  read.csv() |> 
+  filter(grepl('745-5',ST_CODENQUADRA) | # até 20 %
+           grepl('746-3',ST_CODENQUADRA) | # entre 20 % e 50 % 
+           grepl('747-1',ST_CODENQUADRA) & # mais de 50 %
+           ST_DESDOBRAMENTO == '0') |>
+  filter(DT_DATAINFRACAO <= '2021-12-31')|>
+  mutate(Excesso = NR_MEDICAOCONSIDERADA - NR_LIMITEPERMITIDO)|>
+  filter(NR_LIMITEPERMITIDO == 40 | # selecionando linhas com valores corretos de limite
+           NR_LIMITEPERMITIDO == 60 ) |> 
+  filter(Excesso > 0 & Excesso <= 200) %>% #Eliminando Excesso negativos/zerados
+  filter(ST_TIPOAUTOINFRACAO == 2)
+
+# dados para alameda Parnaiba
+# os dados começam dia 05-05-2016 e terminam dia 31-12-2021
+Alameda = data %>% 
+  filter(grepl("Alameda Parnaiba", ST_LOCALMULTA)) %>%
+  filter(!grepl("1817", ST_LOCALMULTA))
+
+# Dados para Av. Raul Lopes
+#dados começam dia 12-05-2017 e terminam 19-10-2020
+Shopping = data %>% 
+  filter(grepl("Shopping",  ST_LOCALMULTA))|>
+  filter(DT_DATAINFRACAO >= '2017-05-05')
+
+# Dados para Av. Maranhão
+#dados começam dia 05-05-2017 e terminam 31-12-2021
+Maranhao = data %>% 
+  filter(grepl("Av. Maranhao,",  ST_LOCALMULTA))|>
+  filter(DT_DATAINFRACAO >= '2017-05-05')
+
+# dados para BArão de castelo branco
+#dados começam dia 26/09/2016 e terminam dia 31/12/2021
+Barao = data %>% 
+  filter(grepl("AV. BARAO DE CASTELO BRANCO, PROX AO REST. CASARAO", ST_LOCALMULTA) |
+        grepl("Av. Barao de C. Branco, prox ao n. 1434", ST_LOCALMULTA))|>
+        filter(DT_DATAINFRACAO >= '2016-09-27')
+```
+
+# Objetivos
+
+
+- Relizar uma previsão de arrecadação em nível diário, mensal e anual, utlizando distribuição composta de Poisson e Teoria de Valores de Extremos.
+
+### Metodologia:
+
+- Distribuição de Poisson Composta e Teoria de Valores Extremos 
+
+### Radares em Análise:
+
+- Alameda Parnaíba, próximo a Ponte Estaiada João Isidoro França – Zona Norte;
+
+- Av. Raul Lopes, em frente ao Teresina Shopping – Zona Leste;
+
+- Av. Maranhão, no trecho entre o centro Administrativo e ponte da Amizade – Zona Sul;
+
+- Av. Barão de Castelo Branco, próximo a Igreja Católica do Cristo Rei. – Zona Sul.     
+
+---
+
+# Medida e Considerada
+
+- Por determinação do CTB - Código de Trânsito Brasileiro, existe uma margem de erro para o registro da velocidade.
+
+```{r}
+compara_velocidade = data.frame(Medida = c(40, 48, 60, 68, 80, 100, 107))
+compara_velocidade$Considerada = compara_velocidade$Medida-7
+
+compara_velocidade|> knitr::kable(caption = "Velocidade medida e Velocidade Considerada")
+```
+
+---
+
+# Tipificação da infraçao
+
+- **Radares de 60 km/h**
+
+```{r}
+# construção das tabela com informações de faixas de velocidade
+data.frame(Tipo = c("Média", "Grave", "Gravíssima"),
+           'Faixa percentual' = c('até 20%', 'entre 20% e 50%', 'superior a 50%'),
+          `Faixa de Excesso` = c('1 ≤ v ≤ 12', '13 ≤ v ≤ 30' , '≥ 31'), 
+           'Valor da Multa'= c('R$ 130,16', 'R$ 195,23', 'R$ 880,41'), 
+           check.names = FALSE)|> knitr::kable(caption = "Divisão do tipo de infração por excesso de velocidade a 60 km/h")
+```
+
+- **Radares de 40 km/h**
+
+```{r}
+data.frame(Tipo = c("Média", "Grave", "Gravíssima"),
+          'Faixa percentual' = c('até 20%', 'entre 20% e 50%','superior a 50%'),
+          `Faixa de Excesso` = c('1 ≤ v ≤ 8', '9 ≤ v ≤ 20' , '≥ 21'), 
+           'Valor da Multa'= c('R$ 130,16', 'R$ 195,23', 'R$ 880,41'), 
+           check.names = FALSE)|> knitr::kable(caption = "Divisão do tipo de infração por excesso de velocidade a 40 km/h")
+```
+
+---
+
+# Análise descritiva do dados - 1
+
+.center[
+
+```{r}
+# Criando a sequencia diária especifica para cada radar
+calendario = data.frame(Dia = seq(as.Date('2016-05-05'), as.Date('2021-12-31'), by = 'day'))
+Dias_alameda = Alameda|>
+                group_by(DT_DATAINFRACAO)|>
+                summarise(Quantidade = n())|>
+                rename(Dia = DT_DATAINFRACAO)|>
+                dplyr::mutate(Dia = as.Date(Dia))|>
+                dplyr::full_join(calendario, by = 'Dia')|>
+                mutate(Quantidade = replace_na(Quantidade, 0))|>
+                arrange(lubridate::ymd(Dia))
+
+alameda_zero = Dias_alameda|>filter(Quantidade == 0)
+
+calendario = data.frame(Dia = seq(as.Date('2017-05-12'), as.Date('2021-12-31'), by = 'day'))
+Dias_Shopping = Shopping|>
+                group_by(DT_DATAINFRACAO)|>
+                summarise(Quantidade = n())|>
+                rename(Dia = DT_DATAINFRACAO)|>
+                dplyr::mutate(Dia = as.Date(Dia))|>
+                dplyr::full_join(calendario, by = 'Dia')|>
+                mutate(Quantidade = replace_na(Quantidade, 0))|>
+                arrange(lubridate::ymd(Dia))
+
+shooping_zero =Dias_Shopping|>filter(Quantidade == 0)
+  
+calendario = data.frame(Dia = seq(as.Date('2017-05-05'), as.Date('2021-12-31'), by = 'day'))
+Dias_Maranhao = Maranhao|>
+               group_by(DT_DATAINFRACAO)|>
+                summarise(Quantidade = n())|>
+                rename(Dia = DT_DATAINFRACAO)|>
+                dplyr::mutate(Dia = as.Date(Dia))|>
+                dplyr::full_join(calendario, by = 'Dia')|>
+                mutate(Quantidade = replace_na(Quantidade, 0))|>
+                arrange(lubridate::ymd(Dia))
+
+Maranhao_zero = Dias_Maranhao|>filter(Quantidade == 0)
+
+calendario =  data.frame(Dia = seq(as.Date('2017-09-26'), as.Date('2021-12-31'), by = 'day'))
+Dias_Barao = Barao|>
+                group_by(DT_DATAINFRACAO)|>
+                summarise(Quantidade = n())|>
+                rename(Dia = DT_DATAINFRACAO)|>
+                dplyr::mutate(Dia = as.Date(Dia))|>
+                dplyr::full_join(calendario, by = 'Dia')|>
+                mutate(Quantidade = replace_na(Quantidade, 0))|>
+                arrange(lubridate::ymd(Dia))
+
+Barao_zero = Dias_Barao|>filter(Quantidade == 0)
+
+# tabela Com resumo das informaçoes de radar
+data.frame(Endereço = c('Alameda Parnaíba', "Av. Raul Lopes", "Av. Maranhão", 'Av. B. C. Branco'),
+          'Data de Inicio' = c('05/05/2016', '12/05/2017', '05/05/2017', '26/09/2016'),
+          'Data Final' = c('31/12/2021', '19/10/2020', '31/12/2021', '31/12/2020'),
+          'Dias' = c(dim(Dias_alameda)[1],
+                     dim(Dias_Shopping)[1], 
+                     dim(Dias_Maranhao)[1], 
+                     dim(Dias_Barao)[1] ), 
+          "Dias Zerados" = c(dim(alameda_zero)[1], 
+                             dim(shooping_zero)[1],
+                             dim(Maranhao_zero)[1],
+                             dim(Barao_zero)[1]), 
+          check.names = FALSE)|> knitr::kable(caption = "Informações sobre os dados registrados por dia")
+```
+
+
+
+Table: Probabilidade de termos 0 multas no dia
+
+|   Endereço	       | p(0; $\lambda$) | 
+|:--------------     |  :-------:      | 
+|Alameda Parnaiba	   |1/12987052869    |
+|Av. Raul Lopes	     |1/1.638646e+13   |
+|Av. Maranhão        |	1/9102770      |
+|Av. Barão C. Branco |	1/22181166     |
+
+]
+
+---
+
+# Análise descritiva do dados - 2
+
+- Informações sobre quantidade de autos por radar e o tipo de infração:
+
+.center[
+
+```{r}
+# retirando dias zerados
+DiasAlamedaSzero = Dias_alameda|>filter(Quantidade > 0)
+DiasShoppingSzero = Dias_Shopping|>filter(Quantidade > 0)
+DiasMaranhaoSzero = Dias_Maranhao|>filter(Quantidade > 0)
+DiasBaraoSzero = Dias_Barao|>filter(Quantidade > 0)
+
+# tabela com os quantidade de autos
+data.frame(Endereço = c('Alameda Parnaiba', 'Av. Raul Lopes', 
+                       'Av. Maranhão',  'Av. B. de Castelo Branco'),
+           Dias  = c(dim(DiasAlamedaSzero)[1],
+                            dim(DiasShoppingSzero)[1],
+                            dim(DiasMaranhaoSzero)[1],
+                            dim(DiasBaraoSzero)[1]), 
+          'Nº de Autos' = c(dim(Alameda)[1],
+                            dim(Shopping)[1],
+                            dim(Maranhao)[1],
+                            dim(Barao)[1]),
+          "Percentual até 20%" = c(90.23, 92.75, 88.34, 79.18),
+          "Percentual entre 20% e 50%" = c(9.30, 7.03,  10.94, 17.66),
+          "Percentual acima 50%" = c(0.45, 0.22, 0.72, 3.16), check.names = FALSE)|>knitr::kable(caption = "Divisão por tipo de infração para os radares")
+```
+
+]
+
+---
+
+## Análise descritiva do dados - 3
+
+.center[
+
+
+```{r}
+data.frame('Endereços' = c('Alameda Parnaiba',
+                           'Av. Raul Lopes',
+                            'Av. Maranhão',  
+                           'Av. B. de Castelo Branco'),
+           'Média diária' = c(round(mean(Dias_alameda$Quantidade),2), 
+                              round(mean(Dias_Shopping$Quantidade),2),
+                              round(mean(Dias_Maranhao$Quantidade),2),
+                             round(mean(Dias_Barao$Quantidade),2)),
+           'Desvio padrão' = c(round(sd(Dias_alameda$Quantidade),2), 
+                               round(sd(Dias_Shopping$Quantidade),2),
+                               round(sd(Dias_Maranhao$Quantidade),2), 
+                               round(sd(Dias_Barao$Quantidade), 2)),
+           check.names = FALSE)|>knitr::kable(caption = "Média e desvios-padrão diários por radar")
+```
+
+
+```{r}
+data.frame(Endereço = c('Alameda Parnaiba', 'Av. Raul Lopes', 
+                       'Av. Maranhão',  'Av. B. de Castelo Branco'),
+            Média = c(round(mean(Alameda$Excesso), 2),  
+                      round(mean(Shopping$Excesso), 2), 
+                      round(mean(Maranhao$Excesso), 2), 
+                      round(mean(Barao$Excesso), 2)),
+            'Desvio Padrão' = c(round(sd(Alameda$Excesso), 2),  
+                                round(sd(Shopping$Excesso), 2), 
+                                round(sd(Maranhao$Excesso), 2), 
+                                round(sd(Barao$Excesso), 2)),
+            Mediana  = c(median(Alameda$Excesso),  
+                         median(Shopping$Excesso),
+                         median(Maranhao$Excesso),
+                         median(Barao$Excesso)),
+            Mínimo = c(min(Alameda$Excesso),  
+                       min(Shopping$Excesso),
+                        min(Maranhao$Excesso), 
+                       min(Barao$Excesso)),
+            Máximo = c(max(Alameda$Excesso),  
+                       max(Shopping$Excesso),
+                       max(Maranhao$Excesso), 
+                       max(Barao$Excesso)) , 
+           check.names = FALSE)|>
+  knitr::kable(caption = "Medidas descritivas das infrações de excesso por radar")
+```
+]
+---
+
+# Análise descritiva do dados - 4
+
+
+
+```{r fig.cap= "Distribuição de excesso na Alameda Parnaíba", out.width= '1000px'}
+ggplot(Alameda)+
+aes(Excesso)+
+geom_histogram(binwidth=1, colour="black", fill = '#eed600', bins = 50)+
+labs(y = 'Quantidade')+
+theme(axis.title.y = element_text(size = 15, family = "Nunito",
+                                    margin = margin(r = 7)),
+        axis.title.x = element_text(size = 15, family = "Nunito",
+                                    margin = margin(t = 8)))+
+geom_vline(xintercept = c(12, 30), linetype="dotted",  color = "#000000", size=1)+
+theme_minimal()
+```
+
+---
+
+# Análise descritiva do dados - 6
+
+
+
+```{r fig.cap= "Distribuição de excesso na Av. Raul Lopes",  out.width= '1000px'}
+ggplot(Shopping)+
+aes(Excesso)+
+geom_histogram(binwidth=1, colour = "black", fill = '#ee00ab', bins = 50)+
+labs(y = 'Quantidade')+
+theme(axis.title.y = element_text(size = 15, family = "Nunito",
+                                    margin = margin(r = 7)),
+        axis.title.x = element_text(size = 15, family = "Nunito",
+                                    margin = margin(t = 8)))+
+geom_vline(xintercept = c(12, 30), linetype="dotted",  color = "#000000", size=1)+
+theme_minimal()
+```
+
+---
+
+# Análise descritiva do dados - 7
+
+```{r fig.cap= "Distribuição de excesso na Av. Maranhão",  out.width= '1000px'}
+ggplot(Maranhao)+
+aes(Excesso)+
+geom_histogram(binwidth=1, colour="black", fill = '#00ee28', bins = 50)+
+labs(y = 'Quantidade')+
+theme(axis.title.y = element_text(size = 15, family = "Nunito",
+                                    margin = margin(r = 7)),
+        axis.title.x = element_text(size = 15, family = "Nunito",
+                                    margin = margin(t = 8)))+
+geom_vline(xintercept = c(12, 30), linetype="dotted",  color = "#000000", size=1)+
+
+theme_minimal()
+```
+
+---
+
+# Análise descritiva do dados - 8
+
+```{r fig.cap= "Distribuição de excesso na Av. B. Castelo Branco",  out.width= '1000px'}
+ggplot(Barao)+
+aes(Excesso)+
+geom_histogram(binwidth=1, colour="black", fill = '#0038ee')+
+labs(y = 'Quantidade')+
+theme(axis.title.y = element_text(size = 15, family = "Nunito",
+                                    margin = margin(r = 7)),
+        axis.title.x = element_text(size = 15, family = "Nunito",
+                                    margin = margin(t = 8)))+
+geom_vline(xintercept = c(8, 20), linetype="dotted",  color = "#000000", size=1)+
+theme_minimal()
+```
+
+
+---
+
+# Testes Hipoteses
+
+#### Teste de corrida:
+
+- $H_{0}$: A sequência dos dados é aleatória
+- $H_{1}$: A sequência dos dados não é aleatória
+
+
+```{r}
+Run_Alameda = DescTools::RunsTest(Alameda$Excesso, alternative = c("two.sided"))
+Run_Raul =  DescTools::RunsTest(Shopping$Excesso, alternative = c("two.sided"))
+Run_Maranhao =  DescTools::RunsTest(Maranhao$Excesso, alternative = c("two.sided"))
+Run_Barao = DescTools::RunsTest(Barao$Excesso, alternative = c("two.sided"))
+
+
+data.frame('Endereço' = c('Alameda Parnaíba', 'Av. Raul Lopes',
+                          'Av. Maranhão', 'Av. Barão de C. Branco'),
+           'p-valor' = c(round(Run_Alameda$p.value, 3), round(Run_Raul$p.value, 3),
+                         round(Run_Maranhao$p.value, 3), round(Run_Barao$p.value, 3)), check.names = FALSE)|>knitr::kable(caption = "Valor-p do Teste de Corridas")
+```
+
+---
+
+# Testes Hipoteses
+
+```{r}
+excessos = c(Alameda$Excesso, Shopping$Excesso, 
+              Maranhao$Excesso, Barao$Excesso)
+
+origem = factor(rep(1:4, c(dim(Alameda)[1], dim(Shopping)[1],
+                            dim(Maranhao)[1], dim(Barao)[1])))
+
+#kruskal.test(excessos ~ origem)
+Kruskal_excessos = kruskal.test(excessos ~ origem)
+
+```
+
+#### Teste de Kruskal–Wallis  
+
+- $H_{0}$ o comportamento semelhante para todos as distribuições em análise 
+- $H_{1}$, o comportamento diferente para, pelo menos, duas das distribuições em análise 
+- $p-valor$: $< 2.2e-16$
+
+```{r}
+df= data.frame(excessos, origem)|>
+  dplyr::mutate(Endereços = dplyr::case_when(origem == 1 ~ "Alameda Parnaíba",
+                                          origem == 2 ~ "Av. Raul Lopes",
+                                          origem == 3 ~ "Av. Maranhão",
+                                          origem == 4 ~ "Av. Barão C. Branco"))
+teste_dunn = df|> rstatix::dunn_test(excessos ~ Endereços, p.adjust.method = 'bonferroni')
+
+teste_dunn[,2:7]|> knitr::kable(caption = "Teste de Dunn")
+```
+
+---
+
+# Comparação da distribuição
+
+```{r fig.cap = 'Boxplot comparativo das distribuições dos excessos',  out.width= '1000px'}
+ggplot(df)+
+aes(x = as.factor(Endereços), y = excessos, fill = Endereços)+
+geom_boxplot()+
+labs(y = 'Excessos')+
+theme_minimal()+
+scale_fill_manual(values = c('#eed600','#0038ee', '#00ee28', '#ee00ab'))+
+theme(axis.title.x=element_blank(),
+      axis.text.x=element_blank())
+```
+
+---
+# Arrecadação possível 
+
+### Tabela com os valores possíveis de arrecadação durante o período de análise dos radares em análise:
+
+```{r}
+data.frame(Local = c('Alameda Parnaiba', 'Av. Raul Lopes', 
+                       'Av. Maranhão',  'Av. B. de Castelo Branco'),
+          'Valores' = c('R$ 6.794.927', 'R$ 7.036.259',
+          'R$ 3.891.757' , 'R$ 5.119.140'), check.names = FALSE)|>
+  knitr::kable(caption = 'Arrecadação Possível')     
+```
+
+
+
+---
+
+# Distribuição Poisson
+
+## Modelando o número diário de Infrações
+
+A distribuição Poisson possui um único parâmetro, $\lambda$, que corresponde a um parametro de intensidade. Sua função de distribuição é:
+
+$$P(X = x|\lambda) = \frac{e^{-\lambda}\lambda^{x}}{x!},\ x = 0,1,...$$
+
+Para esta distribuição, temos que $E(X) = \lambda$ e $VAR(X) = \lambda$ 
+
+---
+
+# Distribuição Poisson composta
+
+Supondo que $N \sim Poisson(\lambda)$ e $N$  seja um cojunto de variáveis baseada em $Poisson$ com valor esperado de $\lambda$ e $X_{1}, X_{2}, X_{3},...$ sejam identicamente distribuídas e independentes, então a distribuição de  probabilidade da soma de $N$ 
+
+$$Y = \sum_{n=1}^{N}x_{n}$$
+
+- **Tabela da média diária:**
+
+```{r alamenda parnaíba}
+# calculos do parametos da gamma
+
+a1_alameda = sum(na.omit(Dias_alameda$Quantidade)) + 0.001
+b1_alameda= dim(DiasAlamedaSzero)[1] + 0.001
+
+# limite inferior
+LI_alameda = qgamma(0.025, a1_alameda, b1_alameda)|>round(3)
+
+# limite superior
+LS_alameda = qgamma(0.975, a1_alameda, b1_alameda)|>round(3)
+
+# lambda
+Lambda_alameda = (a1_alameda/b1_alameda)|>round(3)
+
+```
+
+```{r av. raul Lopes}
+
+a1_Shopping = sum(na.omit(Dias_Shopping$Quantidade)) + 0.001
+b1_Shopping= dim(DiasShoppingSzero)[1] + 0.001
+# limite inferior
+LI_shopping = qgamma(0.025, a1_Shopping, b1_Shopping)|>round(3)
+
+# limite superior
+LS_shopping = qgamma(0.975, a1_Shopping, b1_Shopping)|>round(3)
+
+# labva
+Lambda_Shopping = (a1_Shopping/b1_Shopping)|>round(3)
+```
+
+```{r lambda av. maranhão}
+
+a1_Maranhao = sum(na.omit(Dias_Maranhao$Quantidade)) + 0.001;
+b1_Maranhao= dim(DiasMaranhaoSzero)[1] + 0.001
+
+# limite inferior
+LI_maranhao = qgamma(0.025, a1_Maranhao, b1_Maranhao)|>round(3)
+
+# limite superior
+LS_maranhao = qgamma(0.975, a1_Maranhao, b1_Maranhao)|>round(3)
+
+# lambda
+Lambda_Maranhao = (a1_Maranhao/b1_Maranhao)|>round(3)
+```
+
+```{r lambda av. barão}
+
+a1_Barao = sum(na.omit(Dias_Barao$Quantidade)) + 0.001
+b1_Barao= dim(DiasBaraoSzero)[1] + 0.001
+
+# limite inferior
+LI_barao = qgamma(0.025, a1_Barao, b1_Barao)|>round(3)
+
+# limite superior
+LS_barao = qgamma(0.975, a1_Barao, b1_Barao)|>round(3)
+
+# lamva
+Lambda_Barao = (a1_Barao/b1_Barao)|>round(3)
+```
+
+```{r eval = FALSE}
+data.frame('Endereços' = c('Alameda Parnaiba', 'Av. Raul Lopes',
+                           'Av. Maranhão', 'Av. Barão c. Branco'),
+           'A1' = c(a1_alameda,a1_Shopping, a1_Maranhao, a1_Barao),
+           'B1' = c(b1_alameda,b1_Shopping, b1_Maranhao, b1_Barao),
+           'Lamdba chapeu' = c(Lambda_alameda, Lambda_Shopping, Lambda_Maranhao,
+                               Lambda_Barao),
+           "Limite Inferior" = c(LI_alameda, LI_shopping, LI_maranhao,
+                                 LI_barao),
+           'Limite Superior' = c(LS_alameda, LS_shopping, LS_maranhao,
+                                 LS_barao), check.names = FALSE)|>
+  knitr::kable(caption = "Intervalos de credibilidade da média de autos diários")
+```
+
+| Endereços             | $a_{1}$      |  $b_{1}$      |   $\lambda$       |Limite Inferior| Limite Superior |
+|:--------------        | :-------:    |  :--------:   | :---------:      |   :---------: |:---------:       |  
+|Alameda Parnaiba       |   48647      |`r b1_alameda` |`r Lambda_alameda`|`r LI_alameda` |`r LS_alameda`    |
+| Av. Raul Lopes        |	 51605       |	   1101.001	 |     46.871       |    46.467	    |    47.276        |
+| Av. Maranhão          |	 27273	     |	   1410.001	 |     19.343       |    19.114	    |    19.573        |
+| Av. Barão c. Branco   |	 30954	     |	   1496.001	 |     20.691       |    20.461	    |    20.922        |
+
+
+
+---
+# Função GPD
+
+*Teorema 1: Se x for uma variável aleatória (v.a.) com função distribuição (f.d.) $F_{x}$, que pertence ao domínio da de atração de uma distribuição GEV, então, quando $\mu \to \infty$, $F(x|u) = Pr{X > u + x|X > u}$, possui distribuição GPD, com a seguinte função de distribuição:*
+
+$$P(x|\xi, \sigma, \mu)\ = \
+\left\{ \begin{array}{rcl}
+1 - (1 + \xi\frac{(x - \mu)}{\sigma})^{-\frac{1}{\xi}},\ \mbox{se}\ \xi \neq 0\\
+1 - exp\left\{-\frac{(x - \mu)}{\sigma}\right\}, \ \mbox{se}\ \xi = 0
+\end{array}\right.$$
+
+onde $\mu > 0, x - \mu \geqslant 0$, se $\xi > 0$, e $0 \leqslant x - \mu \leqslant - \frac{\sigma}{\xi}$, se $\xi < 0$. O caso $\xi = 0$ é interpretado como sendo o limite quando $\xi \rightarrow 0$, e tem como caso particular a distribuição exponencial de parâmetro $\frac{1}{\sigma}$. Os parametros são $\xi$, $\sigma$ e $\mu$, que representam, respectivamente, a forma, a escala e o limiar da distribuição.
+
+- Densidade:
+
+$$p(x|\xi, \sigma, \mu)\ = \
+\left\{ \begin{array}{rcl}
+\frac{1}{\sigma}(1 + \xi\frac{x - \mu}{\sigma})^{-\frac{1}{\xi}},\ \mbox{se}& \xi \neq 0\\
+\frac{1}{\sigma}\exp\left\{-\frac{(x - \mu)}{\sigma}\right\}, \ \mbox{se}& \xi = 0
+\end{array}\right.$$
+
+---
+
+# Determinação do limiar
+
+Métodos mais convencionais de determinação do limiar utilizam-se de análises gráficas da linearidade de $N_{u}$. Um método muito utilizado é o gráfico de médias de excessos (MLP\< *Mean Residual Life Plot*), baseado na espera da GPD, NASCIMENTO (2012). Sua construção segue o seguinte formato:
+
+$$\left\{\left(\mu,\ \frac{1}{n_{u}}\sum_{i=1}^{n_{u}} \right): \mu<x_{max}\right\}$$
+
+onde $x_{1}\leqslant x_{2}\leqslant...x_{n}$ consistem nas $N_{u}$ observações que excedem $\mu$, e $x_{max}$ é o valor mais elevado das obervações.
+
+Considerando a distribuição GPD válida para os excesso, esta também é valida para os excesso acima de todos os limiares $\mu > \mu_{0}$ 0, sujeito a mudanças no parâmetro de escala $\sigma_{\mu} = \sigma_{\mu_{0}}+\xi_{\mu}$. Então, para $\mu > \mu_{o}$
+
+$$E(X - \mu|X>\mu)= \frac{\sigma_{\mu}}{1 -\xi}=\frac{\sigma_{\mu_{0}}+\xi_{\mu}}{1 - \xi}$$ 
+
+
+---
+# Mistura de Gammas
+
+Modelo para dados extremos que utiliza aproximação não-paramétrica baseado em mistura de distribuição Gama para valores extremos maiores que um limiar e GPD para cauda dos dados, a função densidade é definida como:
+
+
+$$f(x|\theta, p, \Psi) = 
+\left\{ \begin{array}{rcl}
+h(x|\mu,\eta, p),\ se\ x\  \leq \mu \\
+( 1 - H(x|\mu,\eta, p))p(x|\Psi),\ se\ x\  > \mu
+\end{array}\right.$$
+
+onde $H$ é a função de distribuição acumuda da mistura de Gammas, $\Psi = (\xi, \sigma, \mu)$, $\sigma > 0$, $(x - \mu) \leq - \sigma/\xi$ e  $x> \mu$.
+
+- Encontrando os quantis altos
+
+Na distribuição GPD, pode-se encontrar um quantil q com probabilidade $P(X < q)$ em função dos parâmetros. Invertendo a função acumulada, obtém-se a seguinte função dos quantis da cauda:
+
+$$q_{x}p = \frac{((1 - p*)^{-\xi}-1)}{\xi},$$ 
+
+onde $p*\ =\ 1 - (1-p)N/N_{u}$.
+
+---
+## Parâmetros Estimados - Alameda Parnaíba
+
+.pull-left[
+
+-Alameda Parnaíba
+
+| Parâmetro      | Estimado     | Limite Superior    | Limite Inferior|
+|:-------------- |  :-------:   |  :--------:        |:--------------:| 
+|      $\xi$     |    -0,06     |     -0,07          |  -0,05         |
+|      $\sigma$  |    6,33      |     6,18           |  6,45          |
+|     $u$        |    *3,01*    |     3,01           |    3,01        |
+|     $\mu_{1}$  |    1,00      |     1,00           |    1,00        |
+|     $\mu_{2}$  |    3,55      |     3,52           |    3,57        |
+|     $\eta_{1}$ |    219,16    |     219,05         |    219,18      |
+|     $\eta_{2}$ |    10,07     |     9,85           |    10,40       |
+|     $w_{1}$    |    0,19      |     0,19           |    0,19        |
+|     $w_{2}$    |    0,81      |     0,81           |    0,81        |
+
+
+]
+
+
+.pull-left[
+
+- Dados:
+
+| Parâmetro         |    Medidas   |
+|:--------------    |  :-------:   | 
+| Acima do Limiar   |    52,28%    |
+| Velocidade Máxima |    55,33 km/h|     | 
+| Nível médio       |    87,94%    | 
+| Nivel grave       |    11,67%    |    
+| Nível gravissima  |    0,39%     | 
+
+]
+
+
+
+---
+## Parâmetros Estimados - Av. Raul Lopes
+
+.pull-left[
+
+- Av. Raul Lopes
+
+| Parâmetro      | Estimado     | Limite Superior    | Limite Inferior|
+|:-------------- |  :-------:   |  :--------:        |:--------------:| 
+|      $\xi$     |    -0,04     |     -0,05          |   -0,04        |
+|      $\sigma$  |    5,40      |     5,31           |    5.46        |
+|     $u$        |    *3,00*    |     3,00           |    3,00        |
+|     $\mu_{1}$  |    1,00      |     1,00           |    1,00        |
+|     $\mu_{2}$  |    3,47      |     3,46           |    3,49        |
+|     $\eta_{1}$ |    392,15    |     392,07         |    392,24      |
+|     $\eta_{2}$ |    10,35     |     10,12          |    10,47       |
+|     $w_{1}$    |    0,21      |     0,20           |    0,21        |
+|     $w_{2}$    |    0,79      |     0,79           |    0,80        |
+
+
+]
+
+.pull-left[
+
+- Dados:
+
+| Parâmetro         |    Medidas   |
+|:--------------    |  :-------:   | 
+| Acima do Limiar   |    52,28%    |
+| Velocidade Máxima |    60 km/h   | 
+| Nível médio       |    91,01%    | 
+| Nivel grave       |    8,81 %    |    
+| Nível gravissima  |    0,18%     | 
+
+]
+
+---
+## Parâmetros Estimados - Av. Maranhão
+
+
+.pull-left[
+
+- Av. Maranhão
+
+| Parâmetro      | Estimado     | Limite Superior    | Limite Inferior|
+|:-------------- |  :-------:   |  :--------:        |:--------------:| 
+|      $\xi$     |    0,19      |     0,16           |    0,21        |
+|      $\sigma$  |    4,25      |     4,17           |    4,35        |
+|     $u$        |    *2,00*    |     1,99           |    2,00        |
+|     $\mu_{1}$  |    1,00      |     1,00           |    1,00        |
+|     $\mu_{2}$  |    10,36     |     8,30           |    11,93        |
+|     $\eta_{1}$ |    353,15    |     353,04         |    353,17      |
+|     $\eta_{2}$ |    10,40     |     8,52           |    11.90       |
+|     $w_{1}$    |    0,19      |     0,19           |    0,19        |
+|     $w_{2}$    |    0,81      |     0,81           |    0,81        |
+
+
+]
+
+.pull-left[
+
+- Dados:
+
+| Parâmetro         |    Medidas   |
+|:--------------    |  :-------:   | 
+| Acima do Limiar   |    66,64%    |
+| Velocidade Máxima |    $\infty$  | 
+| Nível médio       |    88,29%    | 
+| Nivel grave       |    10,51 %   |    
+| Nível gravissima  |    1,16%     | 
+
+]
+
+---
+## Parâmetros Estimados - Av. Barão C. Branco
+
+.pull-left[
+
+- Av. Barão C. Branco
+
+| Parâmetro      | Estimado     | Limite Superior    | Limite Inferior|
+|:-------------- |  :-------:   |  :--------:        |:--------------:| 
+|      $\xi$     |    0,00      |     -0,01          |    0,01        |
+|      $\sigma$  |    6,20      |     6,09           |    6,31        |
+|     $u$        |    *3,01*    |     3,01           |    3,02        |
+|     $\mu_{1}$  |    1,02      |     1,00           |    1,09        |
+|     $\mu_{2}$  |    3,62      |     3,60           |    3,67        |
+|     $\eta_{1}$ |    13,00     |     9,98           |    14,20       |
+|     $\eta_{2}$ |    8,85      |     8,58           |    9,14        |
+|     $w_{1}$    |    0,20      |     0,20           |    0,20        |
+|     $w_{2}$    |    0,80      |     0,80           |    0,80        |
+
+]
+
+.pull-left[
+
+- Dados:
+
+| Parâmetro         |    Medidas   |
+|:--------------    |  :-------:   | 
+| Acima do Limiar   |    52,74%    |
+| Velocidade Máxima |    $\infty$  | 
+| Nível médio       |    87,46%    | 
+| Nivel grave       |    11,83%    |    
+| Nível gravissima  |    0,70%     | 
+
+]
+
+
+---
+
+# Resultados
+
+Considerando a estimação do número de autuções diárias pela distribuição de Poisson e a
+estimação do valor do excesso pela distribuição de mistura por GPD,
+obtemos a estimação do valor esperado de arrecadação diária, mensal
+e anual, considerando os valores de cada atuação e de cada faixa de
+multa. Será utilizado o valor esperado da distribuição poisson composta.
+
+- **Arrecadação diária:**
+
+| Endereços             |     IC-      |      IC+      |    Mediana       |
+|:--------------        | :-------:    |  :--------:   | :---------:      | 
+|Alameda Parnaiba       | `R$`3704.35  |  `R$`3764.83  |   `R$`3727.48    |
+| Av. Raul Lopes        |	 `R$`6336.13 |	`R$`6427.17  |   `R$`6383.88    | 
+| Av. Maranhão          |	`R$` 2657.42 |	 `R$`2728.49 |    `R$` 2693.00  | 
+| Av. Barão c. Branco   |	 `R$`2841.20 |   `R$`2900.33 |    `R$`2875.46   |
+
+
+---
+
+# Resultados
+
+-  **Arrecadação mensal**
+
+
+| Endereços             |     IC-      |      IC+              |    Mediana       |
+|:--------------        | :-------:    |  :--------:           | :---------:      | 
+|Alameda Parnaiba       |  `R$` 111130.57  |   `R$`  112944.98 |  `R$` 111824.4   |
+| Av. Raul Lopes        |	 `R$`190083.90   |	  `R$` 192815.17 |   `R$`191516.4   | 
+| Av. Maranhão          |	`R$` 79722.68    |	 `R$`  81854.93	 | `R$`  80790.0    | 
+| Av. Barão c. Branco   |	 `R$`85236.23    |	`R$`   87010.12	 | `R$`  86263.8    |
+
+
+- **Arrecadação anual**
+
+| Endereços             |     IC-          |      IC+          |    Mediana       |
+|:--------------        | :-------:        |  :--------:       | :---------:      | 
+|Alameda Parnaiba       | `R$`  1352088.7  |     `R$`1374163.9 |   `R$`1360530    |
+| Av. Raul Lopes        |	`R$` 2312687.5   |	 `R$`  2345918.0 |   `R$`  2330116  | 
+| Av. Maranhão          |	 `R$`969959.2    |	  `R$` 995901.6	 |   `R$`  982945   | 
+| Av. Barão c. Branco   |	 `R$`1037040.7   |	  `R$` 1058623.2 |    `R$` 1049543  |
+
+
+---
+
+class: center, middle
+
+# Conclusão
+
+O trabalho foi dividido em duas partes. Num primeiro momento, realizamos uma análise através da Distribuição Poisson analisando a frequência diária das infrações de trânsito. A segunda parte consistiu em parametrizar a distribuição dos excessos através da teoria dos valores extremos utilizando a função GPD.
+
+Acreditamos que os resultados obtidos são satisfatórios e que podem auxiliar o poder público na sua organização. Ressaltamos, também, que a análise feita pode ser replicada em outras pesquisas, independente da área, ou seja, não fica restrita a análise de radares, mas, qualquer área que possa ser analisada através da Teoria de Valores Extremos relacionando com a Poisson. 
+
+
+
+---
+
+# Referências
+
+  [1] Nascimento FF, Gamerman D, Lopes HF (2011) \textbf{Regression models for exceedance data via the full likelihood}. Environ Ecol Stat 18:495-512.
+    
+  [2] CTB - \textbf{Código de Trânsito Brasileiro}. Disponível em $http://www.planalto.gov.br/ccivil_03/leis/l9503compilado.htm$
+
+  [3] Beijo, Luiz Alberto e Avelar, Fabricio Goecking (2011). \textbf{Distribuição generalizada de valores extremos no    estudo de dados climáticos : Uma breve revisão e aplicação.}, Revista da Estatística da UFOP, Minas Gerais,
+    v. 1, p.10-15, jan. 2011.
+
+  [4] Bussab, W. O. e Morettin, P. A. (2010). \textbf{Estatística Básica}, Editora Saraiva, 6a. Edição.
+
+  [5] Nascimento, F. F. (2012). \textbf{Modelos Probabilísticos Para Dados Extremos: Teoria e Aplicações.}In: II
+    COLOQUIO DE MATEMÁTICA DA REGIÃO NORDESTE, 2012, Teresina, Piauí. Universidade Federal do Piauí, Edufpi.
+
+  [6] Gibbons, JD e Chakraborti. \textbf{Nonparametric Statiscal Inferece}. Fourth Edition, Revised and Expanded. New York. 
+
+  [7] CASELLA, G. e BERGER, R.L,.   \textbf{Inferência Estatística}. Tradução: Solange Aparecida Visconte. Cengage Learning. São Paulo, 2020.
+
+
+---
+class: center, middle
+
+# Obrigado!!!

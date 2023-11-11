@@ -1,0 +1,1320 @@
+---
+title: ''
+output: 
+  pdf_document:
+    number_sections: TRUE
+    #extra_dependencies: ["float"]
+    keep_tex: TRUE
+    latex_engine: pdflatex
+geometry: "a4paper, left = 3cm, right = 2cm, top = 2cm, bottom = 2cm"
+fontsize: 11pt
+header-includes:
+  - \usepackage{blindtext}
+  - \usepackage{newunicodechar} # melhora a interface das letras na funções
+  - \usepackage[utf8]{inputenc} #Codificacao do documento (conversão automática dos acentos)
+  - \usepackage{float}  # melhor posicionamento das figuras
+  - \usepackage{titlesec}
+  - \usepackage{sectsty} # auxilia no controle das seções
+  - \usepackage{setspace}\spacing{1.5} # espaço entre as linhas
+  - \usepackage{fancyhdr} # controle de cabeçalho e rodapés
+  - \usepackage{microtype} 	#para melhorias de justificação
+  - \usepackage{dcolumn} #aucilia da construção de tabelas
+  - \usepackage{natbib}\bibliographystyle{agsm}
+  - \usepackage[nottoc, numbib]{tocbibind} # construção do sumário
+  - \usepackage[T1]{fontenc} # Selecao de codigos de fonte.
+  - \usepackage{palatino} #fonte
+  - \usepackage{gensymb}  #símbolo º
+  - \usepackage[brazilian]{babel} # altera comandos para português
+  - \usepackage[alf]{abntex2cite} # Citações padrão ABNT
+  - \newcommand\tab[1][1cm]{\hspace*{#1}}
+  - \newunicodechar{≤}{\ensuremath{\leq}} # inserindo sinal de menor que
+  - \newunicodechar{≥}{\ensuremath{\geq}} # inserindo sinal de maior que
+#
+  
+#bibliography: config/references.bib
+biblio-style: apalike
+link-citations: yes
+---
+
+```{r setup, include= FALSE, cache = FALSE, warning=FALSE, message=FALSE}
+# configurações de chuck
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.align = 'center',
+                      cache = TRUE,
+                      fig.width = 6, fig.height = 3.5, fig.retina = 3)
+
+# carregando pacotes
+library(tidyverse)
+library(tinytex)
+library(lubridate)
+set.seed(4)
+```
+
+<!-- capa -->
+
+\subsectionfont{\raggedright}
+\subsubsectionfont{\raggedright}
+
+\thispagestyle{empty}\hrule\vspace{0.025truein}\hrule
+
+\begin{centering}
+
+```{r logo_universidade, out.width="20%"}
+knitr::include_graphics("ufpi.png")
+```
+\begin{singlespace}
+
+\LARGE
+UNIVERSIDADE FEDERAL DO PIAUÍ
+
+\Large
+CENTRO DE CIÊNCIAS DA NATUREZA
+
+\Large
+CURSO DE GRADUAÇÃO EM ESTATÍSTICA
+
+\end{singlespace}
+
+\vspace{4cm}
+
+\LARGE
+\doublespacing
+
+\begin{singlespace}
+{\bf O uso da distribuição Poisson composta na teoria de valores extremos, para previsão de arrecadação de multas por excesso de velocidade.}
+\end{singlespace}
+
+\vspace{4cm}
+
+\doublespacing
+
+\Large              
+{\bf Filipe Mateus de Sousa Costa}
+
+\vspace{3cm}
+
+\doublespacing
+
+\Large  
+{\bf TERESINA - 2022}
+
+\vspace{1cm}
+\hrule\vspace{0.025truein}\hrule
+
+\end{centering}
+
+<!-- caixinha -->
+
+\newpage
+
+\tab 
+
+\thispagestyle{empty}
+
+<!-- folha de rosto -->
+
+\newpage
+\thispagestyle{empty}
+
+\begin{center}
+
+\Large              
+{\bf Filipe Mateus de Sousa Costa}
+
+\vspace{5cm}
+\doublespacing
+
+\Large              
+{\bf Monografia:}
+
+
+{\bf O uso da distribuição Poisson composta na teoria de valores extremos, para previsão de arrecadação de multas por excesso de velocidade.}
+
+
+\vspace{4cm}
+
+\end{center}
+
+\hspace{8cm}{\begin{minipage}{9cm}{
+
+Monografia submetida à Coordenação do curso de graduação em Estatística, da Universidade  Federal  do Piauí, como requisito parcial  para  obtenção do grau de Bacharel em Estatística.\\
+
+Orientador: \parbox[t]{7.0cm}{Profa. Dra. Valmária Rocha da S. Ferraz}
+ 
+Co-orientador: \parbox[t]{7.0cm}{Prof. Dr. Fernando F. do Nascimento}}
+
+\end{minipage}}
+
+\vspace{4cm}
+
+\begin{center}
+\Large  
+{\bf TERESINA - 2022}
+\end{center}
+
+\newpage
+
+\thispagestyle{empty}
+
+<!-- Agradecimentos -->
+
+**Agradecimentos**
+
+\tab Primeiramente, eu preciso agradecer a Deus por ter permitido a possibilidade de realizar uma segunda graduação e ter me sustentado durante todo o curso, foram vários os desafios, mas Ele permitiu que eu conseguisse superar tudo. Soli Deo Glória.  
+
+\tab Preciso agradecer a minha esposa que ficou do meu lado durante este período, sacrificando-se para permitir que eu estudasse, motivando-me. Superando o ciúme por ter sido trocada, muitas vezes, por um livro cheio de fórmulas esquisitas. Incluo meu filho Mateus, que chegou no durante o curso para dar mais emoção à vida. Mesmo pequeno, me ensinou a ser mais produtivo. E claro, meu pai, minha mãe e minha irmã, mesmo a distância, me apoiavam.  
+
+\tab Agradeço a Professora Valmaria por ter aceitado o desafio de me orientar nesse TCC, juntamente com o professor Fernando que ofereceu o apoio teórico para a realização desse projeto. Incluo a STRANS, na pessoa do superitendente Claudio Pessoa, que gentilmente, disponibilizaram os dados para este trabalho.  
+
+\tab Finalizo os agradecimentos aos amigos que foram criados durante o curso. Edvaldo que, como eu, chefe de família. Compartilhamos muito do desafio de trabalhar, cuidar do lar e estudar. Eva, cheia de energia, se esforçava para tirar as melhores notas nas disciplinas. Envelheceu alguns anos durante as madrugadas acordadas, mas ok.
+
+Obrigado a todos, de coração.
+
+\newpage
+
+\thispagestyle{empty}
+
+<!--folha com frase bonita -->
+
+\tab 
+
+\vspace{21cm}
+\begin{flushright}
+\emph{É Cristo, e somente Cristo, que torna o encarar a morte suportável. Cristo infunde aos aspectos mais dolorosos e desconcertantes do fim desta vida esperança e paz. - Nancy Guthrie}
+\end{flushright}
+
+<!--lista de figuras-->
+
+\newpage
+\thispagestyle{empty}
+
+\listoffigures
+
+<!--lista de tabelas-->
+
+\newpage
+
+\thispagestyle{empty}
+
+\listoftables
+
+<!--Resumo-->
+
+\tab 
+
+\newpage
+
+\begin{abstract}
+
+\tab As infrações de excesso de velocidade no trânsito tem como finalidade criar uma medida punitiva e educacional aos condutores que excedem a velocidade máxima da via. Entretando, existe o aspecto arrecatório, influenciado sobre o orçamento do munícipio. A Teoria dos Valores Extremos pode ser uma ferramenta importante para modelar a distribuição do excesso de velocidade determinando o valor possível de arrecadação, além disso, iremos utilizar a distribuição de Poisson Composta para prever o número esperado de infrações diárias, possibilitando a previsão de arrecadação em nível diário, mensal e anual. Uma distribuição de mistura de Gamas com cauda GPD foi proposta para modelar a distribuição do valor do excesso de velocidade. O resultados indicaram valores bem significativos de arrecadação. 
+
+\end{abstract}
+
+<!--Abstract-->
+
+\newpage
+
+**Abstract**
+
+\tab Traffic speeding infractions are intended to create a punitive and educational measure for drivers who exceed the maximum speed of the road. However, there is the revenue aspect, influenced by the municipality's budget. The Theory of Extreme Values can be an important tool to model the distribution of speeding, determining the possible value of collection, in addition, we will use the Composite Poisson distribution to predict the expected number of daily infractions, allowing the collection forecast in daily, monthly and yearly level. The results indicated very significant amounts of collection.
+
+\newpage
+
+<!-- sumário-->
+
+\thispagestyle{empty}
+\tableofcontents
+
+\newpage
+
+# Introdução
+
+
+```{r eval = FALSE}
+\tab  A previsão é uma importante ferramenta para o planejamento de qualquer experimento que se queira ter uma perspectiva do impacto que será obtido. Seja na área pública ou privada, ao termos uma noção melhor dos resultados possíveis, pode-se trabalhar para maximizar o lucro ou melhor aplicação de arrecadações de impostos, por exemplo. 
+```
+
+\tab Infrações de trânsito são um elemento que visam limitar comportamentos que podem causar problemas para o funcionamento fluxo público no trânsito, como resultado de várias discussões visando uma melhor organização para as vias, surgiu o CTB - Código de Trânsito Brasileiro - que regulamenta todo um conjunto de regras que visam o bem público. As infrações de excesso de velocidade, por exemplo, visam limitar que os condutores circulem nas vias com velocidades muito altas, aumentando chances de acidentes. 
+
+\tab Por outro lado, um dos resultados das infrações de trânsito, além da diminuição de situações de risco as pessoas, é o incremento de receita aos cofres públicos. Toda infração de trânsito, quando penalizada, resulta em uma multa de trânsito, que consiste num ônus ao cidadão autuado, mas em valor a ser recebido e utilizado pelas instituições públicas. 
+
+\tab Este trabalho, analisa os dados das autuações de 4 radares em Teresina através das medições que realizadas ao captar uma infração de excesso de velocidade. Dessa forma, buscaremos realizar uma previsão da arrecadação possível que estes radares podem oferecer ao município. Existem outros fatores que influenciam na arrecadação por autos de trânsito como o percentual de autos que são pagos ou a data de pagamento das penalidades em relação ao dia de vencimento da penalidade, mas não pertencem ao objetivo de análise deste projeto. 
+
+\tab As ferramentas estatísticas que utilizamos para a previsão orçamentária correspondem a, primeiramente, realizar uma análise descritiva dos dados, identificando possíveis problemas e falhas nos dados que possam prejudicar uma previsão eficiente. Em um segundo momento, iremos utilizar alguns modelos de  distribuições probalísticas. 
+
+\tab Existe um conjunto de distribuições que trabalham com a ideia de ocorrência de um evento esperado, ou seja, calculam o tempo ou número de elementos necessários para o objeto de análise ocorra. A distribuição de Poisson é usada para este tipo de análise e será base de uma parte do estudo aplicado neste trabalho. 
+
+\tab Eventos extremos são situações ou comportamentos que não ocorrem com tanta frequência. São aqueles que ficam próximos as caudas, distantes do pico onde estão localizadas as medidas de tendência central. Entretanto, é possível que estes eventos ocorram. Na verdade, é esperado que eles ocorram. Diante dessa situação, é importante que possamos prever seus acontecimentos, pois quando ocorrem, as consequências podem ser trágicas.
+
+\tab Exemplos que demonstram com facilidade os efeitos de eventos extremos estão na área da climatologia. Para os portais de notícias, o aquecimento global tem trazido mais manchetes de catástrofes climáticas que causaram prejuízos substanciais e, infelizmente, mortes. Além da área citada, podemos encontrar estudos que envolvem valores extremos em áreas de pesquisa como engenharia de materiais, controle de tráfego e economia. 
+
+\tab O surgimento da teoria de valores extremos surge da necessidade de pesquisas sobre eventos extremos de forma mais eficiente. As distribuições mais comuns trabalham melhor na análise dos eventos centrais, mais frequentes. Dessa forma, os acontecimentos mais raros possuem ficam mais difíceis de prever. Em PINHEIROS (2014), podemos encontrar um resumo da teoria de valores extremos.
+
+## Teoria de Valores Extremos
+
+\tab O objetivo da  da teoria Valores Extremos é analisar valores extremos observados e prever possíveis valores ainda mais extremos, é fazer inferência para eventos cujas probabilidades são menores do que qualquer evento observado anteriormente. Fenômenos em que a probabilidade de um valor extremo é relativamente alta são caracterizados por distribuições com caudas pesadas. 
+
+\tab A distribuição Pareto Generalizada (GPD) analisa a distribuição dos excessos de acordo com um limiar determinado. Esse formato de análise é mais eficaz pois evita a perda de informações que uma análise em períodos (ou blocos) pode gerar, afetando, principalmente, pesquisas com um grande volume de dados.
+
+\tab  A GPD foi desenvolvida por Pickands [1975] é baseada no seguinte teorema:
+
+*Teorema 1: Se x for uma variável aleatória (v.a.) com função distribuição (f.d.) $F_{x}$, que pertence ao domínio da de atração de uma distribuição GEV, então, quando $\mu \to \infty$, $F(x|u) = Pr{X > u + x|X > u}$, possui distribuição GPD, com a seguinte função de distribuição:*
+
+
+
+$$
+P(x|\xi, \sigma, \mu)\ = \
+\left\{ \begin{array}{rcl}
+1 - (1 + \xi\frac{(x - \mu)}{\sigma})^{-\frac{1}{\xi}},\ \mbox{se}\ \xi \neq 0\\
+1 - exp\left\{-\frac{(x - \mu)}{\sigma}\right\}, \ \mbox{se}\ \xi = 0
+\end{array}\right.
+$$
+
+
+onde $\mu > 0, x - \mu \geqslant 0$, se $\xi > 0$, e $0 \leqslant x - \mu \leqslant - \frac{\sigma}{\xi}$, se $\xi < 0$. O caso $\xi = 0$ é interpretado como sendo o limite quando $\xi \rightarrow 0$, e tem como caso particular a distribuição exponencial de parâmetro $\frac{1}{\sigma}$. Os parametros são $\xi$, $\sigma$ e $\mu$, que representam, respectivamente, a forma, a escala e o limiar da distribuição.
+
+
+\tab Para este trabalho, as medições de excesso serão analisadas sobre a perspectiva de valores extremos, distiguindo de outras pesquisas de TVE mais tradicionais onde o limiar é estabelicido através de uma análise estatística, entretanto, para esta pesquisa, consideramos todas a medições realizadas como extremos, baseado na norma de velocidade máxima determinada para a via. 
+
+## Infrações de excesso de velocidade
+
+\tab Os dados trabalhados neste projeto têm como origem as medições de excesso de velocidade registradas por radares no munícipio de Teresina. Baseado no Código de Trânsito Brasileiro (CTB), ruas, avenidas e estradas no Brasil possuem limites de velocidade especificados, no entanto, para a realização do registro infração, é preciso que a via esteja sinalizada informando a velocidade máxima.  
+
+\tab Um ponto importante sobre as infrações de velocidade é a existência de uma margem de erro para medição da velocidade registrada excedente. Para fim de registro de infração, não é utilizado a velocidade obtida pelo instrumento de medição, mas subtrai-se um valor na velocidade medida (para medições até 100km/h, o valor reduzido é de 7 km/h). A velocidade final obtida após a subtração será a considerada para o registro ou não da infração.
+
+\tab Por exemplo, para vias com velocidade máxima de 60 km/h, as infrações serão registradas somente quando a velocidade calculada no ponto de medição for, pelo menos, de 68 km/h, registrando um excesso de 1km/h, mas para uma velocidade registrada de 67 km/h, o valor considerado é de 60km/h, não caracterizando uma infração. O resultado dessa distinção é o uso de dois termos: **Velocidade medida**, que consiste na velocidade Registrada e **Velocidade Considerada**, referente a velocidade medida menos o fator de correção. Na `Tabela 1`, temos a relação entre velocidade medida e velocidade considerada de algumas velocidades, as mais comuns de vermos nas vias brasileiras. A infração é feita quando a considerada é maior que permitida na via.
+
+```{r}
+compara_velocidade = data.frame(Medida = c(40, 48, 60, 68, 80, 100, 107))
+compara_velocidade$Considerada = compara_velocidade$Medida-7
+
+compara_velocidade|> knitr::kable(caption = "Velocidade medida e Velocidade Considerada")
+```
+
+
+\tab Em relação ao tipo de infração, o CTB normatiza três níveis baseado no percentual registrado na passagem do veículo. Para medições até 20% acima da permitida, a infração é média, entre 20% e 50% é considerada grave e, superior a 50%, é gravíssima. O aumento da gravidade resulta no aumento do valor pago da multa. Nas `Tabela 1` e `Tabela 2`, temos um resumo da divisão de tipificação, o intervalo de excesso e o valor pago. A primeira refere-se para vias com velocidade máxima até 60 km/h e a segunda  considera a máxima 40km/h.
+
+- **Radares de 60 km/h**
+
+```{r}
+# construção das tabela com informações de faixas de velocidade
+data.frame(Tipo = c("Média", "Grave", "Gravíssima"),
+           'Faixa percentual' = c('até 20%', 'entre 20% e 50%', 'superior a 50%'),
+          `Faixa de Excesso` = c('1 ≤ v ≤ 12', '13 ≤ v ≤ 30' , '≥ 31'), 
+           'Valor da Multa'= c('R$ 130,16', 'R$ 195,23', 'R$ 880,41'), 
+           check.names = FALSE)|> knitr::kable(caption = "Divisão do tipo de infração por excesso de velocidade a 60 km/h")
+```
+
+- **Radares de 40 km/h**
+
+```{r}
+data.frame(Tipo = c("Média", "Grave", "Gravíssima"),
+          'Faixa percentual' = c('até 20%', 'entre 20% e 50%','superior a 50%'),
+          `Faixa de Excesso` = c('1 ≤ v ≤ 8', '9 ≤ v ≤ 20' , '≥ 21'), 
+           'Valor da Multa'= c('R$ 130,16', 'R$ 195,23', 'R$ 880,41'), 
+           check.names = FALSE)|> knitr::kable(caption = "Divisão do tipo de infração por excesso de velocidade a 40 km/h")
+```
+
+
+```{r}
+# carregando os arquivos
+data = "radar.csv" |>
+  read.csv() |> 
+  filter(grepl('745-5',ST_CODENQUADRA) | # até 20 %
+           grepl('746-3',ST_CODENQUADRA) | # entre 20 % e 50 % 
+           grepl('747-1',ST_CODENQUADRA) & # mais de 50 %
+           ST_DESDOBRAMENTO == '0') |>
+  filter(DT_DATAINFRACAO <= '2021-12-31')|>
+  mutate(Excesso = NR_MEDICAOCONSIDERADA - NR_LIMITEPERMITIDO)|>
+  filter(NR_LIMITEPERMITIDO == 40 | # selecionando linhas com valores corretos de limite
+           NR_LIMITEPERMITIDO == 60 ) |> 
+  filter(Excesso > 0 & Excesso <= 200) %>% #Eliminando Excesso negativos/zerados
+  filter(ST_TIPOAUTOINFRACAO == 2)
+
+# dados para alameda Parnaiba
+# os dados começam dia 05-05-2016 e terminam dia 31-12-2021
+Alameda = data %>% 
+  filter(grepl("Alameda Parnaiba", ST_LOCALMULTA)) %>%
+  filter(!grepl("1817", ST_LOCALMULTA))
+
+# Dados para Av. Raul Lopes
+#dados começam dia 12-05-2017 e terminam 19-10-2020
+Shopping = data %>% 
+  filter(grepl("Shopping",  ST_LOCALMULTA))|>
+  filter(DT_DATAINFRACAO >= '2017-05-05')
+
+# Dados para Av. Maranhão
+#dados começam dia 05-05-2017 e terminam 31-12-2021
+Maranhao = data %>% 
+  filter(grepl("Av. Maranhao,",  ST_LOCALMULTA))|>
+  filter(DT_DATAINFRACAO >= '2017-05-05')
+
+# dados para BArão de castelo branco
+#dados começam dia 26/09/2016 e terminam dia 31/12/2021
+Barao = data %>% 
+  filter(grepl("AV. BARAO DE CASTELO BRANCO, PROX AO REST. CASARAO", ST_LOCALMULTA) |
+        grepl("Av. Barao de C. Branco, prox ao n. 1434", ST_LOCALMULTA))|>
+        filter(DT_DATAINFRACAO >= '2016-09-27')
+```
+
+
+## Organização do trabalho
+
+\tab Este tabalho está dividido da seguinte maneira: No capítulo 2, iremos apresentar quais foram os pontos escolhidos para este trabalho. Realizaremos uma análise descritiva dos dados, apresentando a distribuição dos excessos e as medidas descritivas. Apresentaremos, também, medidas informações para seus comportamentos diários em relação a captação de excessos de velocidade.
+
+\tab No Capítulo 3, faremos um resumo da distribuição de Poisson e seu funcionamento de forma conjunta. Apresentamos, também, conceito de Inferência Bayesiana e realizaremos a estimação para o número de autos diários. No capítulo 4, apresentaremos a Teoria de Valores Extremos e uma noção da teoria de mistura de gammas para estimação de valores dos parâmetros da funções de distribuição da envolvendo excessos.
+
+\tab Por último, na parte final do trabalho, apresentamos os resultados obtidos e fazemos uma estimação dos valores diários, mensais e anuais que pode ser arrecadado em cada radar. 
+
+
+
+\newpage
+
+# Detalhamento dos dados e análise descritiva 
+
+\tab Os radares da cidade de Teresina possuem a função de identificar e registrar infrações, principalmente de transitar em vias destinadas ao transporte público e excesso de velocidade. O número exato de radares não é medida fácil de afirmar, pois existem fatores que influenciam na quantidade de autos em funcionamento, mas em média há 50 radares em funcionamento no município. 
+
+\tab Para a realização deste trabalho, escolhemos 4 endereços em pontos estrátegicos da cidade. São eles:
+
+- Alameda Parnaíba, próximo a Ponte Estaiada João Isidoro França – Zona Norte;
+
+- Av. Raul Lopes, em frente ao Teresina Shopping – Zona Leste;
+
+- Av. Maranhão, no trecho entre o centro Administrativo e ponte da Amizade – Zona Sul;
+
+- Av. Barão de Castelo Branco, próximo a Igreja Católica do Cristo Rei. – Zona Sul.     
+
+
+\tab Estes radares são bastante conhecidos no município de Teresina com velocidade máxima de 60 km/h, a exceção do radar da Av. Barão de Castelo Branco, onde o excesso é de 40 km/h.  Seus bancos de dados são extensos e iremos apresentar algumas medidas descritivas para termos uma noção melhor da distribuição dos excessos. 
+      
+\tab É importante destacar que não é realizado uma distinção do sentido que o veículo está se locomovendo. Para análises futuras, pode-se aprofundar neste ponto. Destaco, também, que  utilizaremos todos os registros realizados, independente se o auto não foi expedido por motivos técnicos ou administrativos.
+
+
+## Análise descritiva do número de infrações diárias.
+
+\tab Os dados utilizados apresentam algumas diferenças de período de registro por via, entretanto, todos os dados têm a data limite de 31/12/2021, sendo seus inícios variados, mas não inferior a  01/01/2016. Isto ocorre devido a fatores administrativos e técnicos. Como consequência, gerou um fator que não podemos mensurar facilmente que são os dias zerados para autuações, pois não podemos identificar se foi problema técnico ou se realmente não houve nenhum registro naquele específico.
+    
+\tab Na `Tabela 4`, apresentamos  informações especificas de cada radar como a data de início e fim dos registros, a quantidade dias entre as datas e a quantidade de dias zerados. 
+
+```{r}
+# Criando a sequencia diária especifica para cada radar
+calendario = data.frame(Dia = seq(as.Date('2016-05-05'), as.Date('2021-12-31'), by = 'day'))
+Dias_alameda = Alameda|>
+                group_by(DT_DATAINFRACAO)|>
+                summarise(Quantidade = n())|>
+                rename(Dia = DT_DATAINFRACAO)|>
+                dplyr::mutate(Dia = as.Date(Dia))|>
+                dplyr::full_join(calendario, by = 'Dia')|>
+                mutate(Quantidade = replace_na(Quantidade, 0))|>
+                arrange(lubridate::ymd(Dia))
+
+alameda_zero = Dias_alameda|>filter(Quantidade == 0)
+
+calendario = data.frame(Dia = seq(as.Date('2017-05-12'), as.Date('2021-12-31'), by = 'day'))
+Dias_Shopping = Shopping|>
+                group_by(DT_DATAINFRACAO)|>
+                summarise(Quantidade = n())|>
+                rename(Dia = DT_DATAINFRACAO)|>
+                dplyr::mutate(Dia = as.Date(Dia))|>
+                dplyr::full_join(calendario, by = 'Dia')|>
+                mutate(Quantidade = replace_na(Quantidade, 0))|>
+                arrange(lubridate::ymd(Dia))
+
+shooping_zero =Dias_Shopping|>filter(Quantidade == 0)
+  
+calendario = data.frame(Dia = seq(as.Date('2017-05-05'), as.Date('2021-12-31'), by = 'day'))
+Dias_Maranhao = Maranhao|>
+               group_by(DT_DATAINFRACAO)|>
+                summarise(Quantidade = n())|>
+                rename(Dia = DT_DATAINFRACAO)|>
+                dplyr::mutate(Dia = as.Date(Dia))|>
+                dplyr::full_join(calendario, by = 'Dia')|>
+                mutate(Quantidade = replace_na(Quantidade, 0))|>
+                arrange(lubridate::ymd(Dia))
+
+Maranhao_zero = Dias_Maranhao|>filter(Quantidade == 0)
+
+calendario =  data.frame(Dia = seq(as.Date('2017-09-26'), as.Date('2021-12-31'), by = 'day'))
+Dias_Barao = Barao|>
+                group_by(DT_DATAINFRACAO)|>
+                summarise(Quantidade = n())|>
+                rename(Dia = DT_DATAINFRACAO)|>
+                dplyr::mutate(Dia = as.Date(Dia))|>
+                dplyr::full_join(calendario, by = 'Dia')|>
+                mutate(Quantidade = replace_na(Quantidade, 0))|>
+                arrange(lubridate::ymd(Dia))
+
+Barao_zero = Dias_Barao|>filter(Quantidade == 0)
+
+# tabela Com resumo das informaçoes de radar
+data.frame(Endereço = c('Alameda Parnaíba', "Av. Raul Lopes", "Av. Maranhão", 'Av. B. C. Branco'),
+          'Data de Inicio' = c('05/05/2016', '12/05/2017', '05/05/2017', '26/09/2016'),
+          'Data Final' = c('31/12/2021', '19/10/2020', '31/12/2021', '31/12/2020'),
+          'Dias' = c(dim(Dias_alameda)[1],
+                     dim(Dias_Shopping)[1], 
+                     dim(Dias_Maranhao)[1], 
+                     dim(Dias_Barao)[1] ), 
+          "Dias Zerados" = c(dim(alameda_zero)[1], 
+                             dim(shooping_zero)[1],
+                             dim(Maranhao_zero)[1],
+                             dim(Barao_zero)[1]), 
+          check.names = FALSE)|> knitr::kable(caption = "Informações sobre os dados registrados por dia")
+```
+
+\tab A `Tabela 5` apresenta a quantidade de dias com registros de autuação, a quantidade de autos registrados em todo o período analisado e a divisão percentual por tipo de infração apresentada anteriomente, média, grave e gravissima.
+
+```{r}
+# retirando dias zerados
+DiasAlamedaSzero = Dias_alameda|>filter(Quantidade > 0)
+DiasShoppingSzero = Dias_Shopping|>filter(Quantidade > 0)
+DiasMaranhaoSzero = Dias_Maranhao|>filter(Quantidade > 0)
+DiasBaraoSzero = Dias_Barao|>filter(Quantidade > 0)
+
+# tabela com os quantidade de autos
+data.frame(Endereço = c('Alameda Parnaiba', 'Av. Raul Lopes', 
+                       'Av. Maranhão',  'Av. B. de Castelo Branco'),
+           Dias  = c(dim(DiasAlamedaSzero)[1],
+                            dim(DiasShoppingSzero)[1],
+                            dim(DiasMaranhaoSzero)[1],
+                            dim(DiasBaraoSzero)[1]), 
+          'Nº de Autos' = c(dim(Alameda)[1],
+                            dim(Shopping)[1],
+                            dim(Maranhao)[1],
+                            dim(Barao)[1]),
+          "Percentual até 20%" = c(90.23, 92.75, 88.34, 79.18),
+          "Percentual entre 20% e 50%" = c(9.30, 7.03,  10.94, 17.66),
+          "Percentual acima 50%" = c(0.45, 0.22, 0.72, 3.16), check.names = FALSE)|>knitr::kable(caption = "Divisão por tipo de infração para os radares")
+```
+
+\tab Todos os radares possuem mais de 1000 dias de registros, entretanto, os dias sem nenhuma autuação constituem uma fator presente em todos, destacando a Av. Raul Lopes, com 595 dias, mas é o ponto analisado com o maior número de autos registrados com 51.605 registrados. Alameda Parnaíba possui o número próximo, com 48.647 autos em 1807 dias. 
+
+\tab Evidencia-se que a primeira faixa de autos é dominantes nos registros de infrações com o maior percentual de de registros com um mínimo de 79,18% na Av. Barão de C. Branco. Pelo fato de possuir uma velocidade máxima de 40 km/h, ocorre uma fator de confundimento aos condutores causando uma proporção de excessos mais altos. Os outros pontos possuem proporções próximas, sendo a tipo gravíssima menor que 1% em todos.
+
+\tab Uma informação complementar a `Tabela 5` está na `Tabela 6`  e consiste na média  e o desvio-padrão diária de autos por radar.
+
+```{r}
+data.frame('Endereços' = c('Alameda Parnaiba',
+                           'Av. Raul Lopes',
+                            'Av. Maranhão',  
+                           'Av. B. de Castelo Branco'),
+           'Média diária' = c(round(mean(Dias_alameda$Quantidade),2), 
+                              round(mean(Dias_Shopping$Quantidade),2),
+                              round(mean(Dias_Maranhao$Quantidade),2),
+                             round(mean(Dias_Barao$Quantidade),2)),
+           'Desvio padrão' = c(round(sd(Dias_alameda$Quantidade),2), 
+                               round(sd(Dias_Shopping$Quantidade),2),
+                               round(sd(Dias_Maranhao$Quantidade),2), 
+                               round(sd(Dias_Barao$Quantidade), 2)),
+           check.names = FALSE)|>knitr::kable(caption = "Média e desvios-padrão diários por radar")
+```
+
+\tab Como consequência do menor número de dias, mas com mais resgitros, Av. Raul Lopes apresenta a maior média diária de autos com o valor de 30,43 autos/dia, Av. Maranhão e Av. Barão de C. Branco obtiveram valores próximos na faixa de  16 autos/dia. Todos os radares obtiveram desvio-padrões muitos altos comparados as médias obtidas, indicando alta variabilidade.
+
+\tab Considerando a presença de dias zerados, é preciso realizar uma avaliação para determinar se estes dias devem ser considerados na análise. Com o valor da média, utilizamos a função exponencial para indicar a probabilidade de um dia conter `0` autuações. Derteminando-se que a probablidade é muito baixa, a decisão tomada seria pela exclusão destes dias na análise.
+
+\tab A função exponecial se estrutura como $f(x|\lambda) = \lambda e^{- \lambda x}, x\ \ge 0$ onde o parâmeto $\lambda$ é a média da distribuição. No software `R`, utilizamos a função $pexp(x, \lambda)$ onde x é o valor que buscamos definir sua probablidade de ocorrência e $\lambda$ é a média. No caso desta pesquisa, a média diária de autos de infração de cada radar.
+
+```{r eval = TRUE, include=FALSE}
+data.frame('Endereço' = c('Alameda Parnaiba', 'Av. Raul Lopes',
+                          'Av. Maranhão', 'Av. Barão C. Branco'),
+           'p(0; lambda)' =c(pexp(0, mean(Dias_alameda$Quantidade)),
+                            pexp(0, mean(Dias_Shopping$Quantidade)),
+                            pexp(0, mean(Dias_Maranhao$Quantidade)),
+                            pexp(0, mean(Dias_Barao$Quantidade))),
+          check.names = FALSE)|>knitr::kable(caption = "Probabalidade de um dia ter 0 autos")
+```
+
+
+```{r}
+data.frame('Endereço' = c('Alameda Parnaiba', 'Av. Raul Lopes',
+                          'Av. Maranhão', 'Av. Barão C. Branco'),
+           'p(0; lambda)' =c("1/12987052869",
+                            "1/1.638646e+13",
+                            "1/9102770",
+                            "1/22181166"),
+          check.names = FALSE)|>knitr::kable(caption = "Probabalidade de um dia ter 0 autos")
+```
+
+
+
+\tab De acordo com a tabela 7, a função exponecial utilizada indicou que a probabilidade de um dia conter 0 autos é mínima, praticamente `0`, dessa forma, podemos utilizar o vetor diário de autuações retirando os dias zerados,  pois o alto número de zeros diários na amostra original foi causado por um não funcionamento do sistema nesses dias.
+
+### Análise descritiva do valor dos excessos. 
+
+\tab O objetivo deste tópico é apresentar algumas medidas mais importantes dos radares que estamos analisando. Primeiramente, na `Tabela 8` com as informações descritivas dos radares. Num segundo momento, construímos algumas imagens  com as distribuições dos excessos dos radares. 
+
+\tab Nos gráficos, as linhas pontilhadas referem-se o ponto onde ocorre a mundança de tipificação das infrações de média para grave e grave para gravíssima. 
+
+```{r}
+data.frame(Endereço = c('Alameda Parnaiba', 'Av. Raul Lopes', 
+                       'Av. Maranhão',  'Av. B. de Castelo Branco'),
+            Média = c(round(mean(Alameda$Excesso), 2),  
+                      round(mean(Shopping$Excesso), 2), 
+                      round(mean(Maranhao$Excesso), 2), 
+                      round(mean(Barao$Excesso), 2)),
+            'Desvio Padrão' = c(round(sd(Alameda$Excesso), 2),  
+                                round(sd(Shopping$Excesso), 2), 
+                                round(sd(Maranhao$Excesso), 2), 
+                                round(sd(Barao$Excesso), 2)),
+            Mediana  = c(median(Alameda$Excesso),  
+                         median(Shopping$Excesso),
+                         median(Maranhao$Excesso),
+                         median(Barao$Excesso)),
+            Mínimo = c(min(Alameda$Excesso),  
+                       min(Shopping$Excesso),
+                        min(Maranhao$Excesso), 
+                       min(Barao$Excesso)),
+            Máximo = c(max(Alameda$Excesso),  
+                       max(Shopping$Excesso),
+                       max(Maranhao$Excesso), 
+                       max(Barao$Excesso)) , 
+           check.names = FALSE)|>
+  knitr::kable(caption = "Medidas descritivas das infrações de excesso por radar")
+```
+
+```{r fig.cap= "Distribuição de excesso na Alameda Parnaíba"}
+ggplot(Alameda)+
+aes(Excesso)+
+geom_histogram(binwidth=1, colour="black", fill = '#eed600', bins = 50)+
+labs(y = 'Quantidade')+
+theme(axis.title.y = element_text(size = 15, family = "Nunito",
+                                    margin = margin(r = 7)),
+        axis.title.x = element_text(size = 15, family = "Nunito",
+                                    margin = margin(t = 8)))+
+geom_vline(xintercept = c(12, 30), linetype="dotted",  color = "#000000", size=1)+
+theme_minimal()
+```
+
+```{r fig.cap= "Distribuição de excesso na Av. Raul Lopes"}
+ggplot(Shopping)+
+aes(Excesso)+
+geom_histogram(binwidth=1, colour = "black", fill = '#ee00ab', bins = 50)+
+labs(y = 'Quantidade')+
+theme(axis.title.y = element_text(size = 15, family = "Nunito",
+                                    margin = margin(r = 7)),
+        axis.title.x = element_text(size = 15, family = "Nunito",
+                                    margin = margin(t = 8)))+
+geom_vline(xintercept = c(12, 30), linetype="dotted",  color = "#000000", size=1)+
+theme_minimal()
+```
+
+```{r fig.cap= "Distribuição de excesso na Av. Maranhão"}
+ggplot(Maranhao)+
+aes(Excesso)+
+geom_histogram(binwidth=1, colour="black", fill = '#00ee28', bins = 50)+
+labs(y = 'Quantidade')+
+theme(axis.title.y = element_text(size = 15, family = "Nunito",
+                                    margin = margin(r = 7)),
+        axis.title.x = element_text(size = 15, family = "Nunito",
+                                    margin = margin(t = 8)))+
+geom_vline(xintercept = c(12, 30), linetype="dotted",  color = "#000000", size=1)+
+
+theme_minimal()
+```
+
+```{r fig.cap= "Distribuição de excesso na Av. B. Castelo Branco"}
+ggplot(Barao)+
+aes(Excesso)+
+geom_histogram(binwidth=1, colour="black", fill = '#0038ee')+
+labs(y = 'Quantidade')+
+theme(axis.title.y = element_text(size = 15, family = "Nunito",
+                                    margin = margin(r = 7)),
+        axis.title.x = element_text(size = 15, family = "Nunito",
+                                    margin = margin(t = 8)))+
+geom_vline(xintercept = c(8, 20), linetype="dotted",  color = "#000000", size=1)+
+theme_minimal()
+```
+
+
+\tab Da `tabela 8` pode-se identificar medidas semelhantes para todos os radares, como o mesmo o mínimo e mesma mediana, com excesso de 4 km/h, indicando comportamentos semelhantes em relação a, pelo menos, 50% da distribuição dos radares. As médias são muito próximas, entre 5 e 6 km/h de excesso e o desvio padrão próximos da faixa de 5 km/h, o que, comparado a média são valores muito altos.
+
+\tab A medida que se diferencia entre os radares é o máximo excesso registrado com uma diferença entre o menor, na Alameda Parnaíba de 67, e o maior, na Av. Barão de B. Branco de 109 de 42 km/h. Analisando com base na velocidade considerada, essse excesso máximo é referente a uma velocidade de 149 km/h. Para os radares de 60 km/h, o maior excesso é na Av. Raul Lopes, com 92 km/h de excesso, resultado de uma velocidade considerada de 152 km/h.
+
+\tab Os graficos indicam comportamentos bem semelhantes na distribuição dos excessos. Utilizando as linhas pontilhadas que indicam a mudança de faixa, vemos a maioria das medidas estão na primeira faixa, de multas de nível médio. O único gráfico onde temos multas do tipo gravíssimo com um pouco de exposição é no radar do da Av. Barão de Castelo Branco, no outros radares, a percetagem é menor que 1%. 
+
+## Alguns testes
+
+\tab Baseado em GIBBNS(2010), iremos realizar alguns testes, o primeiro teste buscar identificar se a ocorrência de multas dos excessos ocorre de uma forma aleatória ou não. Para isso, utilizaremos o teste de corridas, que se baseia no aumento ou diminuição de uma medição comparada com a medição anterior.
+
+\tab O segundo teste realizado será o de Kruskal-Wallis, com o objetivo de comparar a distribuição dos excessos dos radares e identificar se são semelhantes.
+
+### Teste de Corrridas
+
+\tab O primeiro teste que iremos realizar tem como objetivo analisar se a distribuição em análise possui um comportamento aleatório ou não. De acordo com a resposta obtida por radar, podemos ter uma noção do funcionamento dos radares no registro do excessos.
+
+\tab O `teste de corridas` faz uma comparação de todos os valores medidos em posição ordenada e compara com a medição anterior analisando se o valor aumentou ou diminuiu e, a partir da sequência de aumentos ou diminuições, será obtido o número de corridas, sendo este o valor utilizado para determinar a aleatoriedade ou não do processo.  
+\tab As respostas possíveis do teste aplicado são,    
+
+
+$$H_{0}\ =\ A \ sequência \ de \ dados \ é \ aleatória$$
+$$H_{1}\ =\ A \ sequência \ de \ dados \ não \ é \ aleatória$$
+
+\tab Para a realização do teste, utlizando a função `DescTools::RunsTest()` no `R` e os resultados são apresentados a seguir:
+
+
+```{r}
+Run_Alameda = DescTools::RunsTest(Alameda$Excesso, alternative = c("two.sided"))
+Run_Raul =  DescTools::RunsTest(Shopping$Excesso, alternative = c("two.sided"))
+Run_Maranhao =  DescTools::RunsTest(Maranhao$Excesso, alternative = c("two.sided"))
+Run_Barao = DescTools::RunsTest(Barao$Excesso, alternative = c("two.sided"))
+
+
+data.frame('Endereço' = c('Alameda Parnaíba', 'Av. Raul Lopes',
+                          'Av. Maranhão', 'Av. Barão de C. Branco'),
+           'p-valor' = c(round(Run_Alameda$p.value, 3), round(Run_Raul$p.value, 3),
+                         round(Run_Maranhao$p.value, 3), round(Run_Barao$p.value, 3)), check.names = FALSE)|>knitr::kable(caption = "Valor-p do Teste de Corridas")
+```
+
+
+\tab Com os testes realizados, podemos afirmar que os registro dos radares não são aleatórios para todos os radares. Dessa forma, podemos construir uma análise que possa descrever o funcionamento dos radares.
+
+
+### Teste de Kruskal–Wallis  
+          
+\tab Outro teste que podemos realizar é o de Kruskal–Wallis, com ele iremos analisar a distribuição dos quatro radares buscando definir se o comportamento é semelhante ou não. Dessa forma, avalia-se de $H_{0}$ que determina o comportamento semelhante para todos as distribuições em análise ou $H_{1}$, que determina que ao menos dois objetos de análise possui diferença. Este teste utiliza a posição dos medidas das distribuição conjuntas com a esperada.
+
+\tab Se o resultado indicar que existe diferença, utilizaremos um pós-teste (Teste de Dunn) para identificar entre quais ocorrem a diferença. Para realização do teste, utilizamos a função `Kruskal.test` do pacote `stats` do R
+
+```{r}
+excessos = c(Alameda$Excesso, Shopping$Excesso, 
+              Maranhao$Excesso, Barao$Excesso)
+
+origem = factor(rep(1:4, c(dim(Alameda)[1], dim(Shopping)[1],
+                            dim(Maranhao)[1], dim(Barao)[1])))
+
+#kruskal.test(excessos ~ origem)
+Kruskal_excessos = kruskal.test(excessos ~ origem)
+```
+
+\tab O resultado do teste indicou um p-valor muito baixo, 0, indicando que existe diferença entre as distribuições entre os radares. Assim, o próximo o passo é realizar o pós teste para identificar onde estão as diferenças. 
+
+### Pós-Teste
+
+\tab Utilizamos os teste de Dunn, neste procedimento buscaremos avaliar em quais radares estão as diferenças significativas. Utilizamos a função `dunn_test` do pacote rstatix.
+
+```{r}
+df= data.frame(excessos, origem)|>
+  dplyr::mutate(Endereços = dplyr::case_when(origem == 1 ~ "Alameda Parnaíba",
+                                          origem == 2 ~ "Av. Raul Lopes",
+                                          origem == 3 ~ "Av. Maranhão",
+                                          origem == 4 ~ "Av. Barão C. Branco"))
+teste_dunn = df|> rstatix::dunn_test(excessos ~ Endereços, p.adjust.method = 'bonferroni')
+
+teste_dunn[,2:7]|> knitr::kable(caption = "Teste de Dunn")
+```
+
+\tab O pós teste indicou que somente Alameda Parnaíba e Av. Maranhão possuem um comportamento de distribuição parecidos com um p-valor de 0,385, a comparação entre os outros mostrou diferenças signtivativas.
+
+\tab Completando esta análise comparativa, construímos um gráfico Boxplot comparado as distribuições dos excessos. Na `Figura 5`, podemos identificar que existe um comportamento semelhante entre entre as medições do radares, entretanto, podemos enxergar diferenças nos valores outliers, que certamente influenciaram no cálculos dos testes utilizados.
+
+- **Gráfico comparativo**
+
+```{r fig.cap = 'Boxplot comparativo das distribuições dos excessos'}
+ggplot(df)+
+aes(x = as.factor(Endereços), y = excessos, fill = Endereços)+
+geom_boxplot()+
+labs(y = 'Excessos')+
+theme_minimal()+
+scale_fill_manual(values = c('#eed600','#0038ee', '#00ee28', '#ee00ab'))+
+theme(axis.title.x=element_blank(),
+      axis.text.x=element_blank())
+```
+
+## Arrecadação possível 
+
+\tab O último ponto da análise descristiva e que consiste o objetivo final do trabalho, refere-se  a arrecadação possível. A idéia do trabalho é utilizar as informações detalhadas acima para que seja possível realizar uma previsão de arrecadação e, desta forma, aperfeiçoar a forma de administração das receitas e despesas públicas. Abaixo, temos a arredacação possível se todas as multas fosses pagas com o valor integral. 
+
+```{r}
+data.frame(Local = c('Alameda Parnaiba', 'Av. Raul Lopes', 
+                       'Av. Maranhão',  'Av. B. de Castelo Branco'),
+          'Valores' = c('R$ 6.794.927', 'R$ 7.036.259',
+          'R$ 3.891.757' , 'R$ 5.119.140'), check.names = FALSE)|>
+  knitr::kable(caption = 'Arrecadação Possível')     
+```
+
+\tab Os valores são bem significativos, sendo o de maior poder arrecadatório a Av. Raul Lopes, com `R$` 7.036.259. O menor valor está na Av. Maranhão com `R$` 3.891.757. A soma total de arrecadação é de `R$` 22.842.083.
+
+\newpage
+
+# Modelando o número diário de Infrações
+
+\tab Inicialmente, iremos modelar a variável $N$, referente ao número de diário de infrações. Na próxima seção, serão modelados os valores de excesso $X_{i}$ utilizando TVE.
+
+\tab A distribuição Poisson pertence a família das distribuições quantitativas discretas. Seus resultados indicam a probabilidade de evento ocorrer após um período de tempo, segundo @CARSSELA, "um dos suposições básicas sobre a qual este modelo é desenvolvida é a de que, para pequenos intervalos de tempo, a probabilidade de uma chegada é proporcional ao tempo de espera.", em outras palavras, o tempo que se aguardar para um evento influência o resultado. 
+
+\tab A distribuição Poisson possui um único parâmetro, $\lambda$, que corresponde a um parametro de intensidade. Sua função de distribuição é:
+
+$$P(X = x|\lambda) = \frac{e^{-\lambda}\lambda^{x}}{x!},\ x = 0,1,...$$
+\tab Para esta distribuição, temos que $E(X) = \lambda$ e $VAR(X) = \lambda$ 
+
+## Distribuição de Poison Composta
+
+\tab Supondo que $N \sim Poisson(\lambda)$ e $N$  seja um cojunto de variáveis baseada em $Poisson$ com valor esperado de $\lambda$ e $X_{1}, X_{2}, X_{3},...$ sejam identicamente distribuídas e independentes, então a distribuição de  probabilidade da soma de $N$ 
+
+$$Y = \sum_{n=1}^{N}x_{n}$$
+
+é uma distribuição de Poisson composta. 
+
+## Inferência Bayesiana
+
+\tab Uma diferente perspectiva de análise estatística foi iniciada com a *Inferência Bayesiana*, cujo os valores iniciais são originados por distribuições incertas e descritas por uma função de densidade em relação aos parâmetros da função utilizada. 
+
+$$\pi(\theta|x) = \frac{f(x|\theta)p(\theta)}{\int f(x|\theta)p(\theta)d \theta}$$
+
+\tab Preferencialmente, com algum conhecimento do parâmetro, o pesquisador insere a informação na pesquisa através de uma dendidade $p(\theta)$, denominada de disitribuição a priori.
+
+\tab As distribuições sob as regras da inferência Bayesiana contém dois elementos na sua composição: uma distribuição observacional $f(x|\theta)$ e a distribuição $p(\theta)$, sendo esta especificada com a ajuda de parâmetros da distribuição de parâmetros, ou hiperparâmetros.
+
+\tab A esperança dessa distribuição é  dada por:
+$$E(Y) = E(N)E(Y)$$ 
+
+e a variância por:
+
+$$VAR(Y) = E(N)Var(X) + (E(X))^2Var(N)$$.
+
+## Análise dos dados
+
+\tab Utilizando  software `R` na versão 4.2.1, consideramos uma posteriore e calcularmos um intervalos de credibilidade para média diária de autos, dessa forma, temos que $\lambda|x \sim G(a_{1},b_{1})$ onde $a_{1} = \sum x_{i}+a$ e $b_{1} = n + b$. Assim $\widehat{\lambda} = \frac{a_{1}}{b_{1}} = \frac{\sum x_{i}+a}{n + b}$, se $a$ e $b$ são pequenos $(Ex. 0.0001)$,  resultando em  $\widehat{\lambda} \cong \bar{X}$
+
+```{r alamenda parnaíba}
+# calculos do parametos da gamma
+
+a1_alameda = sum(na.omit(Dias_alameda$Quantidade)) + 0.001
+b1_alameda= dim(DiasAlamedaSzero)[1] + 0.001
+
+# limite inferior
+LI_alameda = qgamma(0.025, a1_alameda, b1_alameda)|>round(3)
+
+# limite superior
+LS_alameda = qgamma(0.975, a1_alameda, b1_alameda)|>round(3)
+
+# lambda
+Lambda_alameda = (a1_alameda/b1_alameda)|>round(3)
+
+```
+
+```{r av. raul Lopes}
+
+a1_Shopping = sum(na.omit(Dias_Shopping$Quantidade)) + 0.001
+b1_Shopping= dim(DiasShoppingSzero)[1] + 0.001
+# limite inferior
+LI_shopping = qgamma(0.025, a1_Shopping, b1_Shopping)|>round(3)
+
+# limite superior
+LS_shopping = qgamma(0.975, a1_Shopping, b1_Shopping)|>round(3)
+
+# labva
+Lambda_Shopping = (a1_Shopping/b1_Shopping)|>round(3)
+```
+
+```{r lambda av. maranhão}
+
+a1_Maranhao = sum(na.omit(Dias_Maranhao$Quantidade)) + 0.001;
+b1_Maranhao= dim(DiasMaranhaoSzero)[1] + 0.001
+
+# limite inferior
+LI_maranhao = qgamma(0.025, a1_Maranhao, b1_Maranhao)|>round(3)
+
+# limite superior
+LS_maranhao = qgamma(0.975, a1_Maranhao, b1_Maranhao)|>round(3)
+
+# lambda
+Lambda_Maranhao = (a1_Maranhao/b1_Maranhao)|>round(3)
+```
+
+```{r lambda av. barão}
+
+a1_Barao = sum(na.omit(Dias_Barao$Quantidade)) + 0.001
+b1_Barao= dim(DiasBaraoSzero)[1] + 0.001
+
+# limite inferior
+LI_barao = qgamma(0.025, a1_Barao, b1_Barao)|>round(3)
+
+# limite superior
+LS_barao = qgamma(0.975, a1_Barao, b1_Barao)|>round(3)
+
+# lamva
+Lambda_Barao = (a1_Barao/b1_Barao)|>round(3)
+```
+
+```{r}
+data.frame('Endereços' = c('Alameda Parnaiba', 'Av. Raul Lopes',
+                           'Av. Maranhão', 'Av. Barão c. Branco'),
+           'A1' = c(a1_alameda,a1_Shopping, a1_Maranhao, a1_Barao),
+           'B1' = c(b1_alameda,b1_Shopping, b1_Maranhao, b1_Barao),
+           'Lamdba chapeu' = c(Lambda_alameda, Lambda_Shopping, Lambda_Maranhao,
+                               Lambda_Barao),
+           "Limite Inferior" = c(LI_alameda, LI_shopping, LI_maranhao,
+                                 LI_barao),
+           'Limite Superior' = c(LS_alameda, LS_shopping, LS_maranhao,
+                                 LS_barao), check.names = FALSE)|>
+  knitr::kable(caption = "Intervalos de credibilidade da média de autos diários")
+```
+
+\tab Os valores limites obtidos na `Tabela 12` são baseados em um intervalo de confiança de 95%. Comparando os valores, obtemos o maior  $\lambda$ para Av. Raul Lopes com 46.87 autos dia e o menor para a Av. Maranhão 19.46 autos dia, entrentanto, muito próximo a Av. Barão de C. Branco com 20.69 autos dia. Alameda Parnaiba, com 26,92, evidencia como a Av. Raul Lopes é um ponto com grande número de autos, com uma média quase 2 vezes maior que os outros. 
+
+\tab Neste trabalho, iremos considerar a distribuição de Poisson composta onde a varíavel $X_{n}$ possui uma distribuição de valores extremos que será apresentada na seção seguinte. 
+
+\newpage
+
+# Distribuição Pareto Generalizada (GPD) e Misturas de GPD
+
+\tab Nesta seção iremos modelar os valores dos excesso de velocidade das infrações, para isso utilizamos a distribuição da GPD
+
+
+```{r}
+# Aplicando  a funçao de TVE para cada radar - TCC
+## alameda
+set.seed(4)
+ModelB_2_Alameda  = extrememix::fmgpd(Alameda$Excesso, k = 2, it = 1000, 
+                                      burn = 500, thin = 10)
+# Shopping
+set.seed(4)
+ModelB_2_Shopping  = extrememix::fmgpd(Shopping$Excesso, k = 2, it = 1000, 
+                                      burn = 500, thin = 10)
+# Maranhão
+set.seed(4)
+ModelB_2_Maranhao  = extrememix::fmgpd(Maranhao$Excesso, k = 2, it = 1000, 
+                                      burn = 500, thin = 10)
+
+# Barão
+set.seed(4)
+ModelB_2_Barao = extrememix::fmgpd(Barao$Excesso, k = 2, it = 1000, 
+                                      burn = 500, thin = 10)
+```
+
+
+\tab A função de densidade da distribuição GPD é dada por:
+
+$$
+p(x|\xi, \sigma, \mu)\ = \
+\left\{ \begin{array}{rcl}
+\frac{1}{\sigma}(1 + \xi\frac{x - \mu}{\sigma})^{-\frac{1}{\xi}},\ \mbox{se}& \xi \neq 0\\
+\frac{1}{\sigma}\exp\left\{-\frac{(x - \mu)}{\sigma}\right\}, \ \mbox{se}& \xi = 0
+\end{array}\right.
+$$
+
+onde $x - \mu > 0$ para $\xi \geqslant 0$ e $0 \leqslant x - \mu < -\frac{\mu}{\xi}$ para $\xi > 0$.
+
+\tab  A distribuição GPD possui as seguintes características em relação aos parâmetros:
+
+$$
+E(X)\ =\ \frac{\sigma}{1 - \xi};\ 
+\xi < 1; Md(x)\ =\ \frac{\sigma(2\xi -1)}{\xi};
+V(X)\ =\ \frac{\sigma^{2}}{(1-\xi)^{2}(1-2\xi)}
+$$
+
+\tab  Justificando o uso da GPD Pickands (1975) e Davidson e Smith (1990) demostram as propriedades e provam que GPD é única que satisfaz estas propriedades. "Por exemplo, estabilidade do limiar, ou seja, se Y possui distribuição GPD, e se $\mu > 0$ , então a distribuição de $P(Y - \mu|Y>\mu)$ também possui distribuição GPD". @NASCIMENTO
+
+## Domínio da atração
+
+\tab As distribuições de valores extremos são obtidas como distribuição limite $(n \rightarrow \infty)$ do máximo de um conjunto de variáveis aleatórias (v.a.s) independente e identicamente distribuídas (i.i.d) e são unicamente determinadas, a menos de transformac˜oes afins. O teorema de Fisher-Tippet implica que se $F^{n}_{x}(C_{n}x + d_{n})$ e não degenerada quando $(n \rightarrow \infty)$, para certas constantes $C_{n} > 0,\ d_{n}\ \varepsilon\ \mathbb{R}$, então
+
+$$
+|F^{n}_{X}(x)\ -\ H(\frac{x - d_{n}}{c_{n}})|\  \rightarrow 0, n \rightarrow \infty
+$$
+
+para alguma distribuição H. A coleção das distribuições $F_{x}$ tais que os respectivos máximos possuem a mesma distribuição limite é chamada de domínio de atração.
+
+*Definição 2.1.2 Se (função) se verifica dizemos que* $F_{x}$ pertence ao domínio de atração do máximo da distribuição de valores extremos H. Notação: $F_{x}\  \epsilon\ MDA(H)$
+
+\tab Existem 3 casos possíveis para as distribuições limites das excedências de um limiar. Para domínio dp tipo I $(\gamma = 0)$, a distribuição se torna
+
+$$
+H(y)\ = 1 - e^{-\frac{y}{\sigma}},\ y > 0
+$$
+
+sendo assim, o domínio, uma distribuição Exponencial com parâmetro $\frac{1}{\sigma}$. Para o domínio tipo II $(\gamma > 0)$, a distribuição limite será a distribuição de Pareto . Já para o domínio tipo III $(\gamma < 0)$, quando $\sigma = -\frac{1}{\gamma}$ , a distribuição limite será uma Beta e quando $\sigma \neq -\frac{1}{\gamma}$, adistribuição limite será uma Beta reescalada com suporte em $(0,\frac{\sigma}{\gamma})$.
+
+## Determinação do Limiar
+
+\tab  A análise via GPD exige um cuidado inicial pois é preciso determinar um limiar para os dados. O valor escolhido pode ser determinado pelo pesquisador, entretanto, correm-se riscos que podem influenciar os cálculos, resultando em análises incorretas.
+
+\tab A escolha de um limiar $"\mu"$ muito alto implica em um número muito pequeno de observações resultando em estimadores com grande variabilidade. Um limiar muito pequeno resulta na violação do Teorema de Pickands (1945), modelando de forma errada os valores com limiar baixo, dessa forma, não se garante a convergência dos excessos Y para a família da GPD, levando a um vício alto.
+
+\tab  Métodos mais convencionais de determinação do limiar utilizam-se de análises gráficas da linearidade de $N_{u}$. Um método muito utilizado é o gráfico de médias de excessos (MRL\< *Mena Residual Life Plot*), baseado na espera da GPD, NASCIMENTO (2012). Sua construção segue o seguinte formato:
+
+$$
+\left\{\left(\mu,\ \frac{1}{n_{u}}\sum_{i=1}^{n_{u}} \right): \mu<x_{max}\right\} 
+$$
+
+onde $x_{1}\leqslant x_{2}\leqslant...x_{n}$ consistem nas $N_{u}$ observações que excedem $\mu$, e $x_{max}$ é o valor mais elevado das obervações.
+
+\tab Considerando a distribuição GPD válida para os excesso, esta também é valida para os excesso acima de todos os limiares $\mu > \mu_{0}$ 0, sujeito a mudanças no parâmetro de escala $\sigma_{\mu} = \sigma_{\mu_{0}}+\xi_{\mu}$. Então, para $\mu > \mu_{o}$
+
+$$
+E(X - \mu|X>\mu)= \frac{\sigma_{\mu}}{1 -\xi}=\frac{\sigma_{\mu_{0}}+\xi_{\mu}}{1 - \xi}
+$$ 
+\tab Se o modelo é adequado a partir de $\mu_{0}$ o gráfico apresentará um comportamento linear a partir de u. Um problema recorrente com a utilização desse gráfico é que o limiar pode limitar o número de excessos devido a escolha de limiar muito alto.
+
+\tab Outra técnica gráfica utilizada é Dipersion Index Plot (DIP), baseado em CUNNANE (1979) (Citado por NASCIMENTO (2012)), que diz que, o número de excessos sobre um limiar alto em um determinado período (geralmente meses ou anos), pode ser distribuído através de um processo de Poisson. Assim, a razão entre a variância e a média é igual a 1. Assim, pode-se fazer um gráfico
+
+$$
+\left\{\left(\mu, \frac{Var(Y)}{E(Y)}\right): \mu <x_{max}\right\}
+$$
+
+## Estimação da GPD
+
+\tab  Após determinar o limiar, a estimação dos parâmetros da
+distribuição GPD podem ser estimados por vários métodos, entre eles,
+tem-se o da máxima verossimilhança. Existem outros
+métodos como de momentos proposto por SMITH(1987) (citado por
+MENDES (2004)) e o métodos dos momentos ponderados SINGH e GUO
+(1995) (citado por MENDES (2004)), em que a eficiência de cada
+método depende da situação estudada.
+
+\tab Os estimadores de máxima verossimilhança (EMV) que maximizam a função de log-verossimilhança, quando $\xi \neq 0$, é dado por:
+
+$$
+l(\mu, \xi)\ =\ -n_{u}log(\sigma) - (1+\frac{1}{\xi}\sum_{i=1}^{n_{u}}log(1+\xi\frac{y_{i}}{\sigma}))
+$$ definida em $(1 + \xi\frac{y_{i}}{\sigma})>0$, para todo $i = 1,2,...,N_{u}$. No caso particular onde $\xi = 0$, a a log-verossimilhança é dada por
+
+$$
+l(\sigma)\ =\ -n_{u}log(\sigma)\ -\ \sum_{i=1}^{n_{u}}(\frac{y_i}{\sigma})
+$$
+
+\tab No caso de $\xi = 0$, a maximização dos parâmetros não pode ser obtida analiticamente, sendo necessárias técnicas numéricas de maximização.
+
+
+##  Mistura de Gammas com GPD
+
+\tab  Para valores maiores que um determinado limiar, os dados são estimados por GPD. Para distribuição abaixo do limiar, podemos propor diversas abordagens, sendo uma dela a mistura finita de distribuição. 
+
+
+\tab  NASCIMENTO (2012)  propôs um modelo para dados extremos que utiliza aproximação não-paramétrica baseado em mistura de distribuição Gama para valores extremos maiores que um limiar e GPD para cauda dos dados, a função densidade é definida como:
+
+$$
+f(x|\theta, p, \Psi) = 
+\left\{ \begin{array}{rcl}
+h(x|\mu,\eta, p),\ se\ x\  \leq \mu \\
+( 1 - H(x|\mu,\eta, p))p(x|\Psi),\ se\ x\  >q \mu
+\end{array}\right.
+$$
+
+onde $H$ é a função de distribuição acumuda da mistura de Gammas, $\Psi = (\xi, \sigma, \mu)$, $\sigma > 0$, $(x - \mu) \leq - \sigma/\xi$ e  $x> \mu$.
+
+
+\tab O métodos de Nascimento realiza a estimação dos parâmetros utilizando MCMC -Markov chain Monte Carlo - e em  NASCIMENTO (2012) , encontramos o procedimento de estimação.
+
+\tab  Em valores extremos, além de encontrar a estimativa dos parâmetros do modelo, também é importante encontrar uma forma para determinar os quantis altos, acima do limiar, de tal forma que se X possui distribuição GPD, é importante saber com qual probabilidade ocorre um evento maior ou igual a q, ou seja, $P(X>q) = 1- q$.
+
+\tab Com os cálculos destes quantis, podemos realizar previsões com os dados de autos de excesso velocidade de trânsito de Teresina nos próximos anos, considerando uma manutenção da estrutura dos radares e, incluindo novos endereços de medição, uma previsão de quantos autos poderão ser registrados. Outra variável que pode ser analisada consiste no excessos de velocidade, determinando possíveis valores máximos e a previsão da quantidade de infrações. 
+
+\tab Na distribuição GPD, pode-se encontrar um quantil q com probabilidade $P(X < q)$ em função dos parâmetros. Invertendo a função acumulada, obtém-se a seguinte função dos quantis da cauda:
+
+$$
+q_{x}p = \frac{((1 - p*)^{-\xi}-1)}{\xi},
+$$ onde $p*\ =\ 1 - (1-p)N/N_{u}$.
+
+
+## Análise de Dados 
+
+```{r}
+fx_b = function(x,A,k){
+  px = c()
+  n = dim(A)[1]
+  if( k>1 ){
+    for(i in 1:n){
+      px[i] = extrememix::pmgpd(x,xi = A[i,1],sigma = A[i,2],
+                  u = A[i,3], mu = as.vector(A[i,4:(4+k-1)]),
+                  eta = as.vector(A[i,(4+k):(4+k+k-1)]),
+                  w = as.vector(A[i,(4+k+k):(4+k+k+k-1)]))
+  }}
+  
+  if( k == 1 ){
+    for(i in 1:n){
+      px[i] = extrememix::pggpd(x,xi = A[i,1],sigma = A[i,2],
+                    u = A[i,3], mu = as.vector(A[i,4:(4+k-1)]),
+                    eta = as.vector(A[i,(4+k):(4+k+k-1)]))
+    }}
+  return(px)
+}
+media = 130.16; grave = 195.23; gravisima = 293.47
+```
+
+
+\tab Para realização deste trabalho realizamos testes parar derterminar qual seria o número de Gammas que ofereceria o modelo eficiente para nosso trabalho. Utilizamos  DIC (*Deviance Information Criterion*) para apontar quantas componentes na mistura de Gamma seriam utilizados.
+
+verificar a adequação do modelo nos dados antes do limiar $\mu$.
+
+\tab A `Tabela 13` tem como resultado que para todos os modelos, a utilização de 2 Gammas é a mais eficiente para distribuições de excessos analisadas.
+
+```{r}
+data.frame(`Endereço` = c("Alameda Parnaíba", "Av. Raul Lopes", 
+                          "Av. Maranhão", "Av. Barão C. Branco"),
+           "K = 1" = c(247517.2, 253704.1, 145195.4, 160787.6	),
+           "K = 2" = c(extrememix::DIC(ModelB_2_Alameda),   
+                       extrememix::DIC(ModelB_2_Shopping),
+                       extrememix::DIC(ModelB_2_Maranhao), 
+                       extrememix::DIC(ModelB_2_Barao)),
+           check.names = FALSE)|>
+            knitr::kable(caption = "Comparação de DIC")
+```
+
+\tab Nos próximos tópicos apresentamos os parâmetros estimados para cada radar utilizando 2 Gammas. 
+
+\tab Para estimação dos parâmetros dos modelos, foi utilizado a função `fmgpd` do pacote `extrememix`, criado por Manuele Leonelli, este pacote utiliza a estimação baysiana para modelos de valores extremos utilizando algoritimos de MCMC - Simulação Monte Carlo via cadeias de  Markov. Com este pacote também podemos estimar o limiar que definirá o inicio da utização da função GPD, outras medidas importantes como quantis altos também podem ser conhecidas. 
+
+\tab Uma segunda fase é utilizar funções do pacote `POT` criada por Mathieu Ribatet, é usada no software `R` e fornece algumas funções utilizadas em técnicas de análise univariada e bivariada de valores extremos, em especial a distribuião GPD, alem de alguns recursos gráficos para determinação do limiar. Neste trabalho, não iremos determinar o limiar pois o o modelo proposto de estimação Bayesiana de NASCIMENTO (2012) estima o limiar com um parâmetro.
+
+###  Alameda Parnaíba
+
+\tab Para Alameda Parnaiba, o valor de $\xi$ é estabelecido em -0,06, $\sigma$ em 6,33, o limiar em 3,01.  Através desses valores estabelecidos podemos calcular que o limite máximo de velocidade é de 55,33 km/h. Como o limite máximo registrado é 67 km/h, pode-se dizer q o condutor desse veículo conseguiu superar o limite do limite do modelo criado neste trabalho.
+ 
+```{r}
+summary(ModelB_2_Alameda)|>knitr::kable(caption = "Parâmetros para Alameda Parnaíba")
+```
+
+\tab Através dos gráficos de estimação de valores dos parâmetros, vizualizamos  que $\xi$ possui um comportamento semelhante a uma escada, tendo a média estabelicida em 0,061, para $\sigma$, o comportamento é mais variado e  os valores estimados são próximos dos empíricos. 
+
+```{r out.width="90%", out.height= "90%", fig.cap="Parâmetros estimados Para Alameda Parnaíba"}
+#knitr::include_graphics('D:/OneDrive/DEV/TCC-1/Imagens/Alameda2.png')
+plot(ModelB_2_Alameda)
+```
+
+\tab Para os valores acima do $\mu$ (3,01) estabelicido, podemos utilizar a função fitgpd para analisar a divisão da distribuição e medidas importantes para o modelos. Para a utilização, udsmod  o vetor dos excessos e o limiar determinado pela função `fmgpd` do pacote `extrememix`. 
+
+```{r}
+ajuste_alameda = POT::fitgpd(Alameda$Excesso, 3.01)
+```
+
+\tab Verificamos que os valores obtidos para os  estimadores $\xi$ e $\sigma$ foram, respectivamente, -0,056 e 6,311, valores válidos para o intervalo de confiança da função `fmgpd`. Temos uma proporção de 52,28% acima do limiar, valor bem distinto daqueles que se constuma usar como valor extremo, que noramalmente supera o quantil de 90%.
+
+\tab Com a distribuição dos excesso, outro ponto fundamental é a divisão baseada nas faixas de excesso das atuações de trânsito. Como vimos na Tabela 3, a divisão dos excessos pode ser dividida em três níveis e influência no resultado da arrecadação. 
+
+```{r results = 'hide'}
+# medidas para Alameda Parnaiba
+IC_alameda_12 = fx_b(12,ModelB_2_Alameda$chain, k = 2)
+IC_alameda_30 = fx_b(30,ModelB_2_Alameda$chain, k = 2) - IC_alameda_12
+IC_maior_30 = 1 - fx_b(30,ModelB_2_Alameda$chain, k = 2)
+I_lamba_alameda = rgamma(51, a1_alameda, b1_alameda)
+arrecacao_Alameda = (I_lamba_alameda*(IC_alameda_12*media + 
+                                     IC_alameda_30*grave + 
+                                     IC_maior_30*gravisima))|>round(2)
+```
+
+\tab Para a Alameda Parnaíba, 87,94% das autuações se encontram no primeiro nível de autuação, 11,67% consiste em multa do tipo grave e o último nível, gravissíma, corresponde a 0,39%. 
+
+### Av. Maranhão
+
+\tab Para a Av. Maranhão, temos o limiar mais baixo dos radares que estamos analisando, de 2, o que corresponde a um total de 66,64% de todos elementos acima do limiar, ou seja, trabalhadas na função GPD, somente os  excesso de 1 km/h e 2km/h teriam distribuição não-paramétrica com mistura de gammas. 
+
+\tab O maior excesso registrado empiracamente na Av. Maranhao foi de 70 km/h, no entanto, temos um $\xi$ positivo, o que significa que não há um limite definido para o excesso neste ponto. 
+
+```{r}
+summary(ModelB_2_Maranhao)|>knitr::kable(caption = "Parâmetros para Av. Maranhão")
+```
+
+\tab No gráfico de avaliação dos parâmetros, observamos comportamentos que não seguem um formato de normalidade para $\xi$ e $\sigma$ e a curva de estimação não acompanha a curva de empirica, estando fora do intervalo de confiaça acima do quantil de 98%.
+
+
+```{r out.width="90%", out.height= "90%", fig.cap="Av. Maranhão - Função fmgpd"}
+#knitr::include_graphics('D:/OneDrive/DEV/TCC-1/Imagens/Maranhao2.png')
+plot(ModelB_2_Maranhao)
+```
+
+```{r results = 'hide'}
+# medidas para av. Maranhão
+IC_maranhao_12 = fx_b(12,ModelB_2_Maranhao$chain, k = 2)
+IC_maranhao_30 = fx_b(30,ModelB_2_Maranhao$chain, k = 2) - fx_b(12,ModelB_2_Maranhao$chain, k = 2)
+IC_maranhao_mq_30 = 1 - fx_b(30,ModelB_2_Maranhao$chain, k = 2)
+I_lamba_maranhao = rgamma(51, a1_Maranhao, b1_Maranhao)
+arrecacao_maranhao = (I_lamba_maranhao*(IC_maranhao_12*media + 
+                                     IC_maranhao_30*grave + 
+                                     IC_maranhao_mq_30*gravisima))|>round(2)
+
+median(IC_maranhao_mq_30)
+```
+
+```{r}
+ajuste_maranhao= POT::fitgpd(Maranhao$Excesso, 2)
+```
+
+\tab Baseado na divisão dos excessos dos autos, os resultados obtidos indicam 88,29% para o nível médio, 10,51 para nível grave e 1,16% para nível gravíssima. 
+
+### Av. Raul Lopes - Shopping
+
+\tab Para a Av. Raul Lopes, temos o $\mu$ em 3, o que resulta numa divisão de 50% dos dados desse radar serão trabalhados com mistura de Gammas e a outra metade, superior ao limiar determinado será estimado com gpd. A estimação de $\xi$ é -0,04 e $\sigma$ é 5,40, resultando num limite de velocidade máxima de excesso de 60 km/h
+
+```{r }
+summary(ModelB_2_Shopping)|>knitr::kable(caption = "Parâmetros para Av. Raul Lopes")
+```
+
+\tab No gráfico `Av. Raul Lopes - Função fmgpd` vizualiamos que o estimador de  $\xi$ possui um comportamento mais centralizado no valor estimado de 0,04, para $\sigma$, temos um comportamento com uma variação mais alta.
+
+\newpage
+
+```{r out.width="90%", out.height= "90%", fig.cap="Av. Raul Lopes - Função fmgpd"}
+#knitr::include_graphics('D:/OneDrive/DEV/TCC-1/Imagens/Shopping2.png')
+plot(ModelB_2_Shopping)
+```
+
+```{r}
+fit_raul = POT::fitgpd(Shopping$Excesso, 3.00)
+```
+
+```{r results = 'hide'}
+# medidas para Av. raul lopes
+IC_raul_12 = fx_b(12,ModelB_2_Shopping$chain, k = 2)
+IC_raul_30 = fx_b(30,ModelB_2_Shopping$chain, k = 2) - IC_raul_12
+IC_raul_maior_q30 = 1 - fx_b(30,ModelB_2_Shopping$chain, k = 2)
+I_lamba_shopping = rgamma(51, a1_Shopping, b1_Shopping)
+arrecacao_Shopping = (I_lamba_shopping*(IC_raul_12*media + 
+                                     IC_raul_30*grave + 
+                                     IC_raul_maior_q30*gravisima))|>round(2)
+```
+
+\tab Considerando a divisão dos níveis das multas, temos que 91,01 % dos autos estão no nível médio, 8,81% estão no nível grave e apenas 0,18% é do tipo gravissima. Neste radar, temos a maior proporção de radares para nível médio e a menor para nível gravissima.
+
+### Av. Barão de Castelo Branco
+
+\tab Finalizando a estimação dos parâmetros, temos para o radar da Av. Barão de Castelo Branco, um único de 40 km/h. Para os excessos desse radar, temos que $\xi$ é igual 0, o que indica a utilização de uma função diferente dos modelos anteriores quando $\xi$ foi maior ou menor que 0. Para $\sigma$ temos o valor de 6,20 e o limiar está localizado na medida 3,01, onde 52,74 % estão acima no limiar.
+
+```{r}
+summary(ModelB_2_Barao)|>knitr::kable(caption = "Parâmetros para Av. Barão de C. Branco")
+```
+
+\tab Graficamente, visualizamos  que o estimador $\xi$ não é 0, mas um valor um pouco maior que 0. Utilizando a função `fitgpd` do pacote POT, conseguimos um valor semelhante a 0,006325. Com essa medida, temos que não exite um excesso máximo para a Av. Barão C. Branco. Para a distribuição de $\sigma$, observamos uma variação que quase centraliza na média. Para o quantil de superior a 95%, a linha dos estimados foi a que mais se aproximou da linha empirica.
+
+```{r out.width="90%", out.height= "90%", fig.cap="Av. Barão - Função fmgpd"}
+#knitr::include_graphics('D:/OneDrive/DEV/TCC-1/Imagens/Barao2.png')
+plot(ModelB_2_Barao)
+```
+
+```{r}
+fit_barao = POT::fitgpd(Barao$Excesso, 3.00)
+```
+
+
+```{r results = 'hide'}
+# dados Para Av. Barão B Branco
+IC_barao_12 =  fx_b(12,ModelB_2_Barao$chain, k = 2)
+IC_barao_30 = fx_b(30,ModelB_2_Barao$chain, k = 2) - fx_b(12,ModelB_2_Barao$chain, k = 2)
+Ic_maior_maiorq_30 = 1 - fx_b(30,ModelB_2_Barao$chain, k = 2)
+I_lamba_barao = rgamma(51, a1_Barao, b1_Barao)
+arrecacao_barao = (I_lamba_barao*(IC_barao_12*media + 
+                                     IC_barao_30*grave + 
+                                     Ic_maior_maiorq_30*gravisima))|>round(2)
+```
+
+
+\tab Para os intervalos das infraçoes, temos 87,46% no nível gravíssima, 11,83% para nível médio e  0,70% para o nível gravíssima. 
+
+\newpage
+
+# Estimação da arrecadação pela distribuição Poisson Composta
+
+\tab Considerando a estimação do número de autuções diárias e a estimação do valor do excesso pela distribuição de mistura por GPD, apresentamos a estimação o valor esperado de arrecadação diária, mensal e anual, considerando os valores de cada atuação e de cada faixa de multa. Será utilizado o valor esperado da distribuição poisson composta.
+
+\tab Conclui-se  que o radar localizado na Av. Raul Lopes possui o maior potencial de arrecadação diário, com um valor possível de  `R$ 6379,78`. Em segundo lugar, temos Alemada Parnaíba com `R$ 3727,62`. Av. Maranhão e Av. Barão de C. Branco possuem valores que ficam mais próximos da faixa  de `R$ 2000`, com `R$ 2114,53` e `R$ 211,53`, respectivamente.
+
+\tab Na tabela `Tabela 19` lemos que a Av. Raul Lopes se destaca com o valores mais altos e a única superando os `R$ 6000`, Alameda Parnaíba passa do `R$ 3000`, numa posição intermediária entre os extremos. Os dados apresentados são apresentados considerando um intervalo de confiança de 95% e está construída a partir da função Gamma utilizada no cálculo do parâmetro das médias diárias e através da função `fmgpd` na estimação dos excessos. 
+
+```{r}
+data.frame('Endereço' = c("Alameda Parnaiba", 'Av. Raul Lopes', 
+                          'Av. Maranhão', 'Av. Barão C. Branco'),
+           "IC - " = c(quantile(arrecacao_Alameda, 0.025),
+                       quantile(arrecacao_Shopping, 0.025), 
+                      quantile(arrecacao_maranhao, 0.025), 
+                      quantile(arrecacao_barao, 0.025)),
+           "IC +" = c(quantile(arrecacao_Alameda, 0.975), 
+                      quantile(arrecacao_Shopping, 0.975),
+                      quantile(arrecacao_maranhao, 0.975), 
+                      quantile(arrecacao_barao, 0.975)),
+           "Mediana" = c(quantile(arrecacao_Alameda, 0.5), 
+                         quantile(arrecacao_Shopping, 0.5),
+                        quantile(arrecacao_maranhao, 0.5), 
+                        quantile(arrecacao_barao, 0.5)),
+           check.names = FALSE)|>
+knitr::kable(caption = "Arrecadação diária")
+```
+
+
+\tab Considerando os resultados obtidos para a arrecadação diária, as medições para as possiveis arrecação a nível mensal e anual são resultantes da multiplicação por 30 e 365, respectivamente. Para Av. Raul Lopes, temos potencais de  `R$ 191.393,40`. Para a Alameda Parnaíba, teremos `R$ 111.828,60` , para Av. Maranhão, `R$ 86.253,90` . Para o único radar com velocidade máxima de 40km/h, os valores são `R$ 63.425,90`.
+
+
+```{r}
+mensal = c(quantile(arrecacao_Alameda, 0.5), quantile(arrecacao_Shopping, 0.5),
+                        quantile(arrecacao_maranhao, 0.5), quantile(arrecacao_barao, 0.5))*30
+
+Mensal_inferior = c(quantile(arrecacao_Alameda, 0.025),quantile(arrecacao_Shopping, 0.025), 
+                      quantile(arrecacao_maranhao, 0.025), quantile(arrecacao_barao, 0.025))*30
+
+Mensal_superior = c(quantile(arrecacao_Alameda, 0.975), quantile(arrecacao_Shopping, 0.975),
+                      quantile(arrecacao_maranhao, 0.975), quantile(arrecacao_barao, 0.975))*30
+
+data.frame('Endereço' = c("Alameda Parnaiba", 'Av. Raul Lopes', 
+                          'Av. Maranhão', 'Av. Barão C. Branco'),
+           "IC - " = Mensal_inferior,
+            "IC +" = Mensal_superior,
+           Mediana = mensal,
+           check.names = FALSE)|>knitr::kable(caption = "Arrecadação Mensal")
+```
+
+\tab Para as os valores em níveis anuais, Av. Raul Lopes é a única que passa da barreiras dos 2 milhões, com o potencial de  `R$ 2.328.319,70`, Alameda Parnaiba e Av. Barão de C. Branco ultrapassam a barreira do 1 milhão com `R$ 	1.360.581,30` e `R$ 	1.049.422,40`. Av. Maranhão fica restrista a `R$ 	771.803,40`.
+
+```{r}
+Anual = c(quantile(arrecacao_Alameda, 0.5), quantile(arrecacao_Shopping, 0.5),
+                        quantile(arrecacao_maranhao, 0.5), quantile(arrecacao_barao, 0.5))*365
+
+Anual_inferior = c(quantile(arrecacao_Alameda, 0.025),quantile(arrecacao_Shopping, 0.025), 
+                      quantile(arrecacao_maranhao, 0.025), quantile(arrecacao_barao, 0.025))*365
+
+Anual_superior = c(quantile(arrecacao_Alameda, 0.975), quantile(arrecacao_Shopping, 0.975),
+                      quantile(arrecacao_maranhao, 0.975), quantile(arrecacao_barao, 0.975))*365
+
+data.frame('Endereço' = c("Alameda Parnaiba", 'Av. Raul Lopes', 
+                          'Av. Maranhão', 'Av. Barão C. Branco'),
+           "IC - " = Anual_inferior,
+            "IC +" = Anual_superior,
+           Mediana = Anual,
+           check.names = FALSE)|>knitr::kable(caption = "Arrecadação Anual")
+```
+
+\newpage
+
+# Conclusão
+
+\tab Este trabalho teve como motivação realizar previsões de arrecadação que alguns radares podem disponibilizar ao município de Teresina. Certamente, existem fatores que iram impossibilitar a concretização desses valores devido à falta de pagamentos dos autos em geral, por exemplo.
+
+\tab Entretanto com análises semelhantes a esta e a inclusão de estudos de outras variáveis que influenciam nos pagamentos nas penalidades de trânsito, o poder público pode realizar previsões mais eficientes e organizar as despesas públicas baseados em critérios que buscam a eficiência da arrecadação e dos gastos.  
+
+\tab Este trabalho se dividiu em duas partes. Num primeiro momento, realizamos uma análise através da Distribuição Poisson analisando a frequência diária das infrações de trânsito. A segunda parte consistiu em parametrizar a distribuição dos excessos através da teoria dos valores extremos utilizando a função GPD.
+
+\tab Acreditamos que os resultados obtidos são satisfatórios e que podem auxiliar o poder público na sua organização. Ressaltamos, também, que a análise feita pode ser replicada em outras pesquisas, independente da área, ou seja, não fica restrita a análise de radares, mas, qualquer área que possa ser analisada através da Teoria de Valores Extremos relacionando com a Poisson. 
+
+\newpage
+
+
+ \begin{thebibliography}{99}
+	\onehalfspacing
+	    [1] Nascimento FF, Gamerman D, Lopes HF (2011) \textbf{Regression models for exceedance data via the full likelihood}. Environ Ecol Stat 18:495-512.
+    \\
+    
+    [2] CTB - \textbf{Código de Trânsito Brasileiro}. Disponível em     $http://www.planalto.gov.br/ccivil_03/leis/l9503compilado.htm$
+  \\
+  
+    [3] Beijo, Luiz Alberto e Avelar, Fabricio Goecking (2011). \textbf{Distribuição generalizada de valores extremos no    estudo de dados climáticos : Uma breve revisão e aplicação.}, Revista da Estatística da UFOP, Minas Gerais,
+    v. 1, p.10-15, jan. 2011.
+    \\
+    
+    [4] Bussab, W. O. e Morettin, P. A. (2010). \textbf{Estatística Básica}, Editora Saraiva, 6a. Edição.
+    \\
+    
+    [5] Nascimento, F. F. (2012). \textbf{Modelos Probabilísticos Para Dados Extremos: Teoria e Aplicações.}In: II
+    COLOQUIO DE MATEMÁTICA DA REGIÃO NORDESTE, 2012, Teresina, Piauí. Universidade Federal do Piauí, Edufpi.
+    \\
+  
+  [6] Gibbons, JD e Chakraborti. \textbf{Nonparametric Statiscal Inferece}. Fourth Edition, Revised and Expanded. New York. 
+  \\
+
+  [7] CASELLA, G. e BERGER, R.L,.   \textbf{Inferência Estatística}. Tradução: Solange Aparecida Visconte. Cengage Learning. São Paulo, 2020.
+  \\
+
+  [8] PINHEIRO, E.C. \textbf{Contribuições em inferência e modelagem de valores extremos}. São Paulo, 2014.
+  \\
+	
+  [9] Página de informações do pacote `extrememix`. $https://github.com/manueleleonelli/extrememix$
+\end{thebibliography}	
